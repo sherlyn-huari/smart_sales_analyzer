@@ -22,7 +22,6 @@ from great_expectations.validator.validator import Validator
 
 from synthetic_data_generator import SyntheticDataGenerator
 
-# Configure logging once at module import
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
