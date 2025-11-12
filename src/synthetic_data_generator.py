@@ -1,8 +1,9 @@
 import logging
+import json
 import random
+from pathlib import Path
 from datetime import date, datetime, timedelta
 from typing import Optional, Sequence
-
 import numpy as np
 import polars as pl
 from faker import Faker
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class SyntheticDataGenerator:
-    """Generate realistic synthetic sales data."""
+    """Generate synthetic sales data"""
 
     SHIP_MODES = ["First Class", "Same Day", "Second Class", "Standard Class"]
     SEGMENTS = ["Consumer", "Corporate", "Home Office"]
@@ -59,9 +60,10 @@ class SyntheticDataGenerator:
         "Technology": {"Accessories", "Copiers", "Machines", "Phones"},
     }
 
-    def __init__(self, seed: int = 42, locale: str = "en_US") -> None:
-        """Initialize the synthetic data generator."""
-
+    def __init__(self, data_dir: str | Path = "data", seed: int = 42, locale: str = "en_US") -> None:
+        """Initialize the synthetic data generator"""
+        self.data_dir = Path(data_dir)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
         self.fake = Faker(locale)
         Faker.seed(seed)
         random.seed(seed)
@@ -69,7 +71,7 @@ class SyntheticDataGenerator:
         logger.info("Initialized SyntheticDataGenerator with seed=%s", seed)
 
     def generate_customer_name(self) -> str:
-        """Generate a customer name for the United States locale."""
+        """Generate a customer name for the United States locale"""
         return self.fake.name()
 
     def generate_customer_id(self, customer_name: str) -> str:
@@ -89,7 +91,7 @@ class SyntheticDataGenerator:
         min_ship_days: int = 1,
         max_ship_days: int = 9,
     ) -> tuple[date, date]:
-        """Generate order and ship dates (ship date after order date)."""
+        """Generate order and ship dates (ship date after order date)"""
         order_date = self.fake.date_between(start_date=start_date, end_date=end_date)
         ship_date = self.fake.date_between(
             start_date=order_date + timedelta(days=min_ship_days),
@@ -98,7 +100,7 @@ class SyntheticDataGenerator:
         return order_date, ship_date
 
     def generate_location_data(self) -> dict[str, str]:
-        """Generate city, state, postal code and region."""
+        """Generate city, state, postal code and region"""
         city = random.choice(list(self.US_CITIES))
         city_info = self.US_CITIES[city]
         postal_code = f"{city_info['zip_prefix']}{random.randint(10, 99)}"
@@ -109,28 +111,32 @@ class SyntheticDataGenerator:
             "Region": city_info["region"],
         }
 
-    def generate_categories(self) -> dict[str, str]:
-        """Generate category and sub-category by random choice."""
-        category = random.choice(list(self.CATEGORIES))
-        sub_category = random.choice(list(self.CATEGORIES[category]))
-        return {"Category": category, "Sub-Category": sub_category}
+    def generate_category_product(self) -> dict[str, str]:
+        """Generate category and sub_category by random choice"""
+        catalog_path = self.data_dir / "product_catalog.json"
+        with catalog_path.open("r", encoding="uft-8") as f:
+            product_catalog = json.load(f)
+        category = random.choice(list(product_catalog.keys()))
+        sub_category = random.choice(list(product_catalog[category].keys()))
+        product = random.choice(product_catalog[category][sub_category])
+        return {"Category": category, "Sub-Category": sub_category,"Product": product }
 
     def generate_order_id(self, order_date: datetime) -> str:
-        """Generate an order identifier (e.g. US-2016-118983)."""
+        """Generate an order identifier (e.g. US-2016-118983)"""
         return f"US-{order_date.year}-{random.randint(100000, 999999)}"
 
     def generate_sales_amount(self, min_amount: int = 20, max_amount: int = 2000) -> float:
-        """Generate a sales amount within the provided range."""
+        """Generate a sales amount within the provided range"""
         return float(random.randint(min_amount, max_amount))
 
     def generate_product_id(self, category: str, subcategory: str) -> str:
-        """Generate a product identifier based on category and sub-category."""
+        """Generate a product identifier based on category and sub-category"""
         cat_abbr = category[:3].upper()
         sub_abbr = subcategory[:2].upper()
         return f"{cat_abbr}-{sub_abbr}-100{random.randint(10000, 99999)}"
 
     def _fallback_products(self) -> Sequence[str]:
-        """Fallback list of synthetic product names."""
+        """Fallback list of synthetic product names"""
         products = []
         for category, subcategories in self.CATEGORIES.items():
             for sub in subcategories:
@@ -144,34 +150,24 @@ class SyntheticDataGenerator:
         start_date: date = date(2015, 1, 1),
         end_date: date = date(2018, 12, 31),
     ) -> pl.DataFrame:
-        """Generate synthetic sales records."""
+        """Generate synthetic sales records"""
 
         logger.info("Generating %s synthetic rows...", num_rows)
 
-        product_names: Sequence[str] = []
         start_row_id = 1
 
         if original_df is not None and len(original_df) > 0:
-            if "Product Name" in original_df.columns:
-                try:
-                    product_names = (
-                        original_df.select("Product Name")
-                        .unique()
-                        ["Product Name"]
-                        .to_list()
-                    )
-                except Exception as exc:  # pragma: no cover - defensive
-                    logger.warning("Could not extract product names: %s", exc)
             if "Row ID" in original_df.columns:
                 try:
                     start_row_id = int(
                         original_df.select(pl.col("Row ID").max()).item()
                     ) + 1
-                except Exception as exc:  # pragma: no cover - defensive
+                except Exception as exc:
                     logger.warning("Could not determine starting Row ID: %s", exc)
-
-        if not product_names:
-            product_names = self._fallback_products()
+        else:
+            logger.info(
+                "No base dataset provided; generating synthetic rows using defaults"
+            )
 
         synthetic_rows = []
 
@@ -183,11 +179,8 @@ class SyntheticDataGenerator:
             )
             order_id = self.generate_order_id(order_date)
             location = self.generate_location_data()
-            categories = self.generate_categories()
-            product_id = self.generate_product_id(
-                categories["Category"], categories["Sub-Category"]
-            )
-            product_name = random.choice(product_names)
+            category, sub_category, product_name = self.generate_category_product()
+            product_id = self.generate_product_id(category, sub_category)
             sales = self.generate_sales_amount(min_amount=10, max_amount=2900)
 
             row = {
@@ -204,8 +197,8 @@ class SyntheticDataGenerator:
                 "State": location["State"],
                 "Postal Code": location["Postal Code"],
                 "Region": location["Region"],
-                "Category": categories["Category"],
-                "Sub-Category": categories["Sub-Category"],
+                "Category": category,
+                "Sub-Category": sub_category,
                 "Product ID": product_id,
                 "Product Name": product_name,
                 "Sales": sales,
@@ -215,37 +208,3 @@ class SyntheticDataGenerator:
         synthetic_df = pl.DataFrame(synthetic_rows)
         logger.info("Successfully generated %s synthetic rows", len(synthetic_df))
         return synthetic_df
-
-    def augment_dataframe(
-        self,
-        original_df: pl.DataFrame,
-        num_synthetic_rows: int = 10_000,
-        **kwargs,
-    ) -> pl.DataFrame:
-        """Augment an existing sales dataframe with synthetic rows."""
-
-        synthetic_df = self.generate_synthetic_data(
-            original_df, num_rows=num_synthetic_rows, **kwargs
-        )
-        if original_df is not None and len(original_df) > 0:
-            schema = original_df.schema
-            aligned_columns = []
-            for column_name, dtype in schema.items():
-                if column_name in synthetic_df.columns:
-                    aligned_columns.append(
-                        pl.col(column_name).cast(dtype, strict=False).alias(column_name)
-                    )
-                else:
-                    aligned_columns.append(
-                        pl.lit(None).cast(dtype).alias(column_name)
-                    )
-            synthetic_df = synthetic_df.select(aligned_columns)
-
-        combined_df = pl.concat([original_df, synthetic_df])
-        logger.info(
-            "Augmented data: %s original + %s synthetic = %s total rows",
-            len(original_df),
-            len(synthetic_df),
-            len(combined_df),
-        )
-        return combined_df

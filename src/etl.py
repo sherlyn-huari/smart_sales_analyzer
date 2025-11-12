@@ -5,6 +5,7 @@ import logging
 import os
 import warnings
 import json
+import polars as pl
 import shutil
 from pathlib import Path
 from typing import Dict, Optional
@@ -128,19 +129,35 @@ class SalesETL:
         num_synthetic_rows: int = 10_000,
         **kwargs,
     ) -> pd.DataFrame:
-        """Combine Kaggle data with synthetic augmentation."""
-        logger.info("Generating %s synthetic rows", num_synthetic_rows)
-        synthetic_df = self.synthetic_generator.generate_synthetic_data(
-                num_rows=num_synthetic_rows, **kwargs )
-        
-        if hasattr(synthetic_df, "to_pandas"):
-            synthetic_df = synthetic_df.to_pandas()
+        """Combine kaggle data with synthetic data"""
 
         if base_df is not None:
-            logger.info("Combining %s Kaggle rows with %s synthetic rows", len(base_df), len(synthetic_df))
-            return pd.concat([base_df, synthetic_df], ignore_index=True)
+            base_df_pl = pl.from_pandas(base_df)
+        else:
+            base_df_pl = None
 
-        return synthetic_df
+        logger.info("Generating %s synthetic rows", num_synthetic_rows)
+        synthetic_df = self.synthetic_generator.generate_synthetic_data(
+                original_df=base_df_pl, num_rows=num_synthetic_rows, **kwargs )
+        
+        if isinstance(synthetic_df, pl.DataFrame):
+            synthetic_rows = synthetic_df.height
+            synthetic_df = synthetic_df.to_pandas()
+        else:
+            raise TypeError("Synthetic generator returned unsupported type "
+                    f"{type(synthetic_df).__name__}")
+
+        if base_df is None:
+            logger.info(
+                "No kaggle base data provided; returning %s synthetic rows only",
+                synthetic_rows,
+            )
+            return synthetic_df
+
+        logger.info("Combining %s Kaggle rows with %s synthetic rows",
+                    len(base_df), synthetic_rows)
+        
+        return pd.concat([base_df, synthetic_df], ignore_index=True)
 
     # Transformations
 
@@ -153,12 +170,16 @@ class SalesETL:
         transformed = df.rename(columns=rename_map).copy()
 
         if "order_date" in transformed.columns:
-            transformed["order_date"] = pd.to_datetime(transformed["order_date"], errors="coerce")
+            transformed["order_date"] = pd.to_datetime(transformed["order_date"], errors="coerce", dayfirst=True)
+            null_mask = transformed["order_date"].isna()
+            if null_mask.any():
+                logger.warning("Found %s rows with invalid order_date values", null_mask.sum())
+
             transformed["order_year"] = transformed["order_date"].dt.year
             transformed["order_month"] = transformed["order_date"].dt.month
 
         if "ship_date" in transformed.columns:
-            transformed["ship_date"] = pd.to_datetime(transformed["ship_date"], errors="coerce")
+            transformed["ship_date"] = pd.to_datetime(transformed["ship_date"], errors="coerce", dayfirst=True)
 
         if "order_date" in transformed.columns and "ship_date" in transformed.columns:
             transformed["ship_latency_days"] = (transformed["ship_date"] - transformed["order_date"]).dt.days
@@ -280,7 +301,7 @@ class SalesETL:
         summaries: Dict[str, pd.DataFrame],
         quality_results: Dict[str, bool],
     ) -> None:
-        """Persist the dataset, summary tables, and quality report under the data directory."""
+        """Persist the dataset, summary tables, and quality report under the data directory"""
         dataset_path = self.data_dir / "sales_enriched.parquet"
         df.to_parquet(dataset_path, index=False)
         logger.info("Saved enriched dataset to %s", dataset_path)
@@ -352,4 +373,7 @@ class SalesETL:
 
 if __name__ == "__main__":
     etl = SalesETL()
-    etl.run()
+    try:
+        etl.run()
+    except ValueError as exc:
+        logger.error("Pipeline aborted: %s", exc)
