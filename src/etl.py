@@ -5,6 +5,7 @@ import logging
 import os
 import warnings
 import json
+import polars as pl
 import shutil
 from pathlib import Path
 from typing import Dict, Optional
@@ -128,19 +129,35 @@ class SalesETL:
         num_synthetic_rows: int = 10_000,
         **kwargs,
     ) -> pd.DataFrame:
-        """Combine Kaggle data with synthetic augmentation."""
-        logger.info("Generating %s synthetic rows", num_synthetic_rows)
-        synthetic_df = self.synthetic_generator.generate_synthetic_data(
-                num_rows=num_synthetic_rows, **kwargs )
-        
-        if hasattr(synthetic_df, "to_pandas"):
-            synthetic_df = synthetic_df.to_pandas()
+        """Combine kaggle data with synthetic data"""
 
         if base_df is not None:
-            logger.info("Combining %s Kaggle rows with %s synthetic rows", len(base_df), len(synthetic_df))
-            return pd.concat([base_df, synthetic_df], ignore_index=True)
+            base_df_pl = pl.from_pandas(base_df)
+        else:
+            base_df_pl = None
 
-        return synthetic_df
+        logger.info("Generating %s synthetic rows", num_synthetic_rows)
+        synthetic_df = self.synthetic_generator.generate_synthetic_data(
+                original_df=base_df_pl, num_rows=num_synthetic_rows, **kwargs )
+        
+        if isinstance(synthetic_df, pl.DataFrame):
+            synthetic_rows = synthetic_df.height
+            synthetic_df = synthetic_df.to_pandas()
+        else:
+            raise TypeError("Synthetic generator returned unsupported type "
+                    f"{type(synthetic_df).__name__}")
+
+        if base_df is None:
+            logger.info(
+                "No kaggle base data provided; returning %s synthetic rows only",
+                synthetic_rows,
+            )
+            return synthetic_df
+
+        logger.info("Combining %s Kaggle rows with %s synthetic rows",
+                    len(base_df), synthetic_rows)
+        
+        return pd.concat([base_df, synthetic_df], ignore_index=True)
 
     # Transformations
 
