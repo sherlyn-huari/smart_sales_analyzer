@@ -284,7 +284,7 @@ class SalesETL:
         summaries: Dict[str, pd.DataFrame],
         quality_results: Dict[str, bool],
     ) -> None:
-        """Persist the dataset, summary tables, and quality report under the data directory."""
+        """Persist the dataset, summary tables, and quality report under the data directory"""
         dataset_path = self.data_dir / "sales_enriched.parquet"
         df.to_parquet(dataset_path, index=False)
         logger.info("Saved enriched dataset to %s", dataset_path)
