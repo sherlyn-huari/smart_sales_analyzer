@@ -51,9 +51,3 @@ What happens:
 source .venv/bin/activate
 streamlit run src/dashboard.py
 ```
-This reads the CSV summaries/DuckDB file to validate metrics interactively.
-
-## Troubleshooting
-- **Kaggle download failed / DNS error** – run on a machine with internet access or place `train.csv` manually in `data/input/`.
-- **“Could not find local file-backed GX project”** – harmless; Great Expectations will run in ephemeral mode unless you initialize a `great_expectations/` directory.
-- **Duplicate “Generating synthetic rows” logs** – expected; the generator logs progress, so the ETL no longer emits its own duplicate message.
