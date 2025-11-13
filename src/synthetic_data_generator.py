@@ -3,7 +3,7 @@ import json
 import random
 from pathlib import Path
 from datetime import date, datetime, timedelta
-from typing import Optional, Sequence
+from typing import Optional
 import numpy as np
 import polars as pl
 from faker import Faker
@@ -58,12 +58,11 @@ class SyntheticDataGenerator:
             "Supplies",
         },
         "Technology": {"Accessories", "Copiers", "Machines", "Phones"},
-    }
-
-    def __init__(self, data_dir: str | Path = "data", seed: int = 42, locale: str = "en_US") -> None:
+    } 
+    def __init__(self, input_dir: str | Path = "data/input", seed: int = 42, locale: str = "en_US") -> None:
         """Initialize the synthetic data generator"""
-        self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.input_dir = Path(input_dir)
+        self.input_dir.mkdir(parents=True, exist_ok=True)
         self.fake = Faker(locale)
         Faker.seed(seed)
         random.seed(seed)
@@ -112,9 +111,9 @@ class SyntheticDataGenerator:
         }
 
     def generate_category_product(self) -> dict[str, str]:
-        """Generate category and sub_category by random choice"""
-        catalog_path = self.data_dir / "product_catalog.json"
-        with catalog_path.open("r", encoding="uft-8") as f:
+        """Generate category and sub_category"""
+        catalog_path = self.input_dir / "product_catalog.json"
+        with catalog_path.open("r") as f:
             product_catalog = json.load(f)
         category = random.choice(list(product_catalog.keys()))
         sub_category = random.choice(list(product_catalog[category].keys()))
@@ -126,7 +125,7 @@ class SyntheticDataGenerator:
         return f"US-{order_date.year}-{random.randint(100000, 999999)}"
 
     def generate_sales_amount(self, min_amount: int = 20, max_amount: int = 2000) -> float:
-        """Generate a sales amount within the provided range"""
+        """Generate a sales amount"""
         return float(random.randint(min_amount, max_amount))
 
     def generate_product_id(self, category: str, subcategory: str) -> str:
@@ -134,15 +133,7 @@ class SyntheticDataGenerator:
         cat_abbr = category[:3].upper()
         sub_abbr = subcategory[:2].upper()
         return f"{cat_abbr}-{sub_abbr}-100{random.randint(10000, 99999)}"
-
-    def _fallback_products(self) -> Sequence[str]:
-        """Fallback list of synthetic product names"""
-        products = []
-        for category, subcategories in self.CATEGORIES.items():
-            for sub in subcategories:
-                products.append(f"{category} - {sub}")
-        return products
-
+    
     def generate_synthetic_data(
         self,
         original_df: Optional[pl.DataFrame] = None,
@@ -175,8 +166,7 @@ class SyntheticDataGenerator:
             customer_name = self.generate_customer_name()
             customer_id = self.generate_customer_id(customer_name)
             order_date, ship_date = self.generate_order_dates(
-                start_date=start_date, end_date=end_date
-            )
+                start_date=start_date, end_date=end_date )
             order_id = self.generate_order_id(order_date)
             location = self.generate_location_data()
             category, sub_category, product_name = self.generate_category_product()

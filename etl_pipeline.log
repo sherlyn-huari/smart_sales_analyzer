@@ -344,3 +344,167 @@ Please make sure you specified the correct resource identifiers.
 2025-11-11 19:32:13,561 - INFO - Saved top_products summary to data/top_products.csv
 2025-11-11 19:32:13,561 - INFO - Saved data quality report to data/quality_report.json
 2025-11-11 19:32:13,712 - INFO - Persisted analytics tables into data/sales_analytics.duckdb
+2025-11-12 19:06:57,718 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-12 19:06:57,771 - INFO - Removed 15 rows containing null values
+2025-11-12 19:06:57,801 - INFO - Generating 10000 synthetic rows
+2025-11-12 19:06:57,801 - INFO - Generating 10000 synthetic rows...
+2025-11-12 19:07:32,807 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-12 19:07:32,859 - INFO - Removed 15 rows containing null values
+2025-11-12 19:07:32,880 - INFO - Generating 10000 synthetic rows
+2025-11-12 19:07:32,880 - INFO - Generating 10000 synthetic rows...
+2025-11-12 19:07:57,057 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-12 19:07:57,106 - INFO - Removed 15 rows containing null values
+2025-11-12 19:07:57,125 - INFO - Generating 10000 synthetic rows
+2025-11-12 19:07:57,125 - INFO - Generating 10000 synthetic rows...
+2025-11-12 19:10:15,043 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-12 19:10:15,093 - INFO - Removed 15 rows containing null values
+2025-11-12 19:10:15,113 - INFO - Generating 10000 synthetic rows
+2025-11-12 19:10:15,114 - INFO - Generating 10000 synthetic rows...
+2025-11-12 19:10:17,969 - INFO - Successfully generated 10000 synthetic rows
+2025-11-12 19:10:17,990 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-12 19:10:18,074 - INFO - Could not find local file-backed GX project
+2025-11-12 19:10:18,075 - INFO - Created temporary directory '/tmp/tmp32ro9gy1' for ephemeral docs site
+2025-11-12 19:10:18,075 - INFO - Loading 'datasources' ->
+[]
+2025-11-12 19:10:18,145 - INFO - Data quality checks success=True
+2025-11-12 19:10:18,195 - INFO - Saved enriched dataset to data/sales_enriched.parquet
+2025-11-12 19:10:18,196 - INFO - Saved yearly summary to data/yearly.csv
+2025-11-12 19:10:18,197 - INFO - Saved segment_yearly summary to data/segment_yearly.csv
+2025-11-12 19:10:18,197 - INFO - Saved regional_revenue summary to data/regional_revenue.csv
+2025-11-12 19:10:18,198 - INFO - Saved top_products summary to data/top_products.csv
+2025-11-12 19:10:18,198 - INFO - Saved data quality report to data/quality_report.json
+2025-11-12 19:10:18,361 - INFO - Persisted analytics tables into data/sales_analytics.duckdb
+2025-11-12 23:58:59,539 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-12 23:58:59,588 - INFO - Removed 15 rows containing null values
+2025-11-12 23:58:59,606 - INFO - Generating 10000 synthetic rows
+2025-11-12 23:58:59,606 - INFO - Generating 10000 synthetic rows...
+2025-11-12 23:59:02,474 - INFO - Successfully generated 10000 synthetic rows
+2025-11-12 23:59:02,484 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-12 23:59:02,565 - INFO - Could not find local file-backed GX project
+2025-11-12 23:59:02,565 - INFO - Created temporary directory '/tmp/tmpq3mjqunn' for ephemeral docs site
+2025-11-12 23:59:02,566 - INFO - Loading 'datasources' ->
+[]
+2025-11-12 23:59:02,634 - INFO - Data quality checks success=True
+2025-11-12 23:59:02,672 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-12 23:59:02,677 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-12 23:59:02,677 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-12 23:59:02,678 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-12 23:59:02,678 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-12 23:59:02,678 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-12 23:59:02,811 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb
+2025-11-13 00:07:10,895 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-13 00:07:10,896 - INFO - Downloading dataset rohitsahoo/sales-forecasting 
+2025-11-13 00:07:11,535 - INFO - Dataset copied to data/input/train.csv
+2025-11-13 00:07:11,598 - INFO - Removed 15 rows containing null values
+2025-11-13 00:07:11,622 - INFO - Generating 10000 synthetic rows
+2025-11-13 00:07:11,623 - INFO - Generating 10000 synthetic rows...
+2025-11-13 00:07:14,674 - INFO - Successfully generated 10000 synthetic rows
+2025-11-13 00:07:14,685 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-13 00:07:14,765 - INFO - Could not find local file-backed GX project
+2025-11-13 00:07:14,766 - INFO - Created temporary directory '/tmp/tmp9zttujs7' for ephemeral docs site
+2025-11-13 00:07:14,766 - INFO - Loading 'datasources' ->
+[]
+2025-11-13 00:07:14,834 - INFO - Data quality checks success=True
+2025-11-13 00:07:14,872 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-13 00:07:14,873 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-13 00:07:14,874 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-13 00:07:14,874 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-13 00:07:14,874 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-13 00:07:14,874 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-13 00:07:14,996 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb
+2025-11-13 00:09:29,978 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-13 00:09:29,978 - INFO - Downloading dataset rohitsahoo/sales-forecasting 
+2025-11-13 00:09:30,706 - INFO - Dataset copied to data/input/train.csv
+2025-11-13 00:09:30,771 - INFO - Removed 15 rows containing null values
+2025-11-13 00:09:30,792 - INFO - Generating 10000 synthetic rows
+2025-11-13 00:09:30,792 - INFO - Generating 10000 synthetic rows...
+2025-11-13 00:09:33,771 - INFO - Successfully generated 10000 synthetic rows
+2025-11-13 00:09:33,782 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-13 00:09:33,859 - INFO - Could not find local file-backed GX project
+2025-11-13 00:09:33,859 - INFO - Created temporary directory '/tmp/tmp_l0nve73' for ephemeral docs site
+2025-11-13 00:09:33,859 - INFO - Loading 'datasources' ->
+[]
+2025-11-13 00:09:33,926 - INFO - Data quality checks success=True
+2025-11-13 00:09:33,965 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-13 00:09:33,970 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-13 00:09:33,970 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-13 00:09:33,971 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-13 00:09:33,971 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-13 00:09:33,971 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-13 00:09:34,095 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb
+2025-11-13 00:14:02,361 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-13 00:14:02,415 - INFO - Removed 15 rows containing null values
+2025-11-13 00:14:02,434 - INFO - Generating 10000 synthetic rows
+2025-11-13 00:14:02,434 - INFO - Generating 10000 synthetic rows...
+2025-11-13 00:14:05,412 - INFO - Successfully generated 10000 synthetic rows
+2025-11-13 00:14:05,423 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-13 00:14:05,509 - INFO - Could not find local file-backed GX project
+2025-11-13 00:14:05,509 - INFO - Created temporary directory '/tmp/tmpam3gittx' for ephemeral docs site
+2025-11-13 00:14:05,509 - INFO - Loading 'datasources' ->
+[]
+2025-11-13 00:14:05,577 - INFO - Data quality checks success=True
+2025-11-13 00:14:05,615 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-13 00:14:05,616 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-13 00:14:05,617 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-13 00:14:05,617 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-13 00:14:05,617 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-13 00:14:05,617 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-13 00:14:05,745 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb
+2025-11-13 00:16:19,594 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-13 00:16:19,644 - INFO - Removed 15 rows containing null values
+2025-11-13 00:16:19,665 - INFO - Generating 10000 synthetic rows
+2025-11-13 00:16:19,665 - INFO - Generating 10000 synthetic rows...
+2025-11-13 00:16:22,601 - INFO - Successfully generated 10000 synthetic rows
+2025-11-13 00:16:22,612 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-13 00:16:22,690 - INFO - Could not find local file-backed GX project
+2025-11-13 00:16:22,691 - INFO - Created temporary directory '/tmp/tmpsxe0k1uz' for ephemeral docs site
+2025-11-13 00:16:22,691 - INFO - Loading 'datasources' ->
+[]
+2025-11-13 00:16:22,757 - INFO - Data quality checks success=True
+2025-11-13 00:16:22,796 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-13 00:16:22,801 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-13 00:16:22,802 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-13 00:16:22,802 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-13 00:16:22,802 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-13 00:16:22,803 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-13 00:16:22,924 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb
+2025-11-13 00:17:43,578 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-13 00:17:43,579 - INFO - Downloading dataset rohitsahoo/sales-forecasting 
+2025-11-13 00:17:44,202 - INFO - Dataset copied to data/input/train.csv
+2025-11-13 00:17:44,257 - INFO - Removed 15 rows containing null values
+2025-11-13 00:17:44,278 - INFO - Generating 10000 synthetic rows
+2025-11-13 00:17:44,278 - INFO - Generating 10000 synthetic rows...
+2025-11-13 00:17:47,180 - INFO - Successfully generated 10000 synthetic rows
+2025-11-13 00:17:47,191 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-13 00:17:47,273 - INFO - Could not find local file-backed GX project
+2025-11-13 00:17:47,274 - INFO - Created temporary directory '/tmp/tmpuab46j2s' for ephemeral docs site
+2025-11-13 00:17:47,274 - INFO - Loading 'datasources' ->
+[]
+2025-11-13 00:17:47,342 - INFO - Data quality checks success=True
+2025-11-13 00:17:47,381 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-13 00:17:47,382 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-13 00:17:47,383 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-13 00:17:47,383 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-13 00:17:47,383 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-13 00:17:47,383 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-13 00:17:47,503 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb
+2025-11-13 00:19:04,703 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-13 00:19:04,704 - INFO - Downloading dataset rohitsahoo/sales-forecasting 
+2025-11-13 00:19:06,798 - INFO - Dataset copied to data/input/train.csv
+2025-11-13 00:19:06,849 - INFO - Removed 11 rows containing null values
+2025-11-13 00:19:06,862 - INFO - Generating 10000 synthetic rows
+2025-11-13 00:19:06,862 - INFO - Generating 10000 synthetic rows...
+2025-11-13 00:19:09,864 - INFO - Successfully generated 10000 synthetic rows
+2025-11-13 00:19:09,874 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-13 00:19:09,958 - INFO - Could not find local file-backed GX project
+2025-11-13 00:19:09,959 - INFO - Created temporary directory '/tmp/tmp0smjnezd' for ephemeral docs site
+2025-11-13 00:19:09,959 - INFO - Loading 'datasources' ->
+[]
+2025-11-13 00:19:10,026 - INFO - Data quality checks success=True
+2025-11-13 00:19:10,065 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-13 00:19:10,071 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-13 00:19:10,071 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-13 00:19:10,072 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-13 00:19:10,072 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-13 00:19:10,072 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-13 00:19:10,212 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb

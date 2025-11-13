@@ -1,5 +1,4 @@
-"""Smart Sales Analyzer - Local ETL pipeline"""
-
+"""Sales Analyzer - ETL pipeline"""
 from __future__ import annotations
 import logging
 import os
@@ -19,7 +18,6 @@ from great_expectations.core.batch_spec import RuntimeDataBatchSpec
 from great_expectations.core.expectation_suite import ExpectationSuite
 from great_expectations.execution_engine import PandasExecutionEngine
 from great_expectations.validator.validator import Validator
-
 from synthetic_data_generator import SyntheticDataGenerator
 
 logging.basicConfig(
@@ -29,55 +27,62 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 class SalesETL:
-    """Local ETL pipeline that enriches data and produces analytical summaries."""
 
-    def __init__(self, data_dir: str | Path = "data") -> None:
-        self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, input_dir: Path | str = "data/input" , output_dir: str | Path = "data/output") -> None:
+        self.input_dir = Path(input_dir)
+        self.output_dir = Path(output_dir) 
+        self.input_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok= True)
         self.synthetic_generator = SyntheticDataGenerator()
         self.df: Optional[pd.DataFrame] = None
-        self.warehouse_path = self.data_dir / "sales_analytics.duckdb"
+        self.warehouse_path = self.output_dir / "sales_analytics.duckdb"
         self.dataset_slug = "rohitsahoo/sales-forecasting"
         self._setup_kaggle_credentials()
-        logger.debug("SalesETL initialized with data directory: %s", self.data_dir.resolve())
     
     def _setup_kaggle_credentials(self) -> None:
-        """Load Kaggle credentials from .env (if present)."""
+        """Load kaggle credentials from .env"""
         load_dotenv()
-        username = os.getenv("KAGGLE_USERNAME")
-        key = os.getenv("KAGGLE_KEY")
-        if username and key:
-            os.environ["KAGGLE_USERNAME"] = username
-            os.environ["KAGGLE_KEY"] = key
-            logger.debug("Kaggle credentials loaded from environment.")
+        missing: list[str] = []
+
+        for var in ("KAGGLE_USERNAME", "KAGGLE_USERNAME"):
+            value = os.getenv(var)
+            if value:
+                os.environ[var] = value
+            else:
+                missing.append(var)
+
+        if missing:
+            logger.warning(
+                "Missing Kaggle credential(s): %s; dataset download may fail.",
+                ", ".join(missing),
+            )
         else:
-            logger.warning("Kaggle credentials not found; dataset download may fail.")
+            logger.debug("Kaggle credentials loaded from environment")
 
     def download_kaggle_dataset(self,force: bool = False ) -> Optional[Path]:
-        """Download dataset from Kaggle into the data directory."""
+        """Download dataset into the data directory"""
         try:
             logger.info("Downloading dataset %s ", self.dataset_slug)
             download_path = Path(kagglehub.dataset_download(self.dataset_slug))
 
             train_csv = download_path / "train.csv"
             if train_csv.exists():
-                target = self.data_dir / "train.csv"
+                target = self.input_dir / "train.csv"
                 shutil.copy2(train_csv, target)
                 logger.info("Dataset copied to %s", target)
                 return target
             else:
-                logger.warning("train.csv not found in %s", download_path)
+                logger.warning("Dataset download failed")
                 return None
         except Exception as exc: 
             logger.error("Dataset download failed for %s", exc)
             return None
 
     def _fix_format_csv(self, csv_path: Path) -> None:
-        """Patch known CSV issues (e.g., stray commas in product names) before loading."""
+        """Check CSV issues before loading (extra commas)"""
         if not csv_path.exists():
-            return
+            return None
 
         replacements = {
             "Flash Drive, 16GB": "Flash Drive 16GB",
@@ -135,7 +140,6 @@ class SalesETL:
         else:
             base_df_pl = None
 
-        logger.info("Generating %s synthetic rows", num_synthetic_rows)
         synthetic_df = self.synthetic_generator.generate_synthetic_data(
                 original_df=base_df_pl, num_rows=num_synthetic_rows, **kwargs )
         
@@ -155,13 +159,11 @@ class SalesETL:
 
         logger.info("Combining %s Kaggle rows with %s synthetic rows",
                     len(base_df), synthetic_rows)
-        
+
         return pd.concat([base_df, synthetic_df], ignore_index=True)
 
-    # Transformations
-
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform raw data: standardize columns, extract dates, calculate metrics."""
+        """Transform raw data: standardize columns, extract dates, calculate metrics"""
         rename_map: Dict[str, str] = {
             col: col.strip().lower().replace(" ", "_").replace("-", "_")
             for col in df.columns
@@ -192,8 +194,6 @@ class SalesETL:
         self.df = transformed
         logger.debug("Transformed dataset with %s rows and %s columns", len(transformed), len(transformed.columns))
         return transformed
-
-    # Reporting
 
     def build_summaries(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         """Create summary tables for analytics and reporting."""
@@ -270,7 +270,7 @@ class SalesETL:
                 category=UserWarning,
             )
 
-            for column in ["order_id", "customer_id", "sales", "order_date"]: # this test fail
+            for column in ["order_id", "customer_id", "sales", "order_date"]:
                 if column in pandas_df.columns:
                     result = validator.expect_column_values_to_not_be_null(column)
                     expectations[f"{column}_not_null"] = bool(result.success)
@@ -293,24 +293,23 @@ class SalesETL:
         logger.info("Data quality checks success=%s", expectations["overall_success"])
         return expectations
 
-    # Persistence
     def persist_outputs(
         self,
         df: pd.DataFrame,
         summaries: Dict[str, pd.DataFrame],
         quality_results: Dict[str, bool],
     ) -> None:
-        """Persist the dataset, summary tables, and quality report under the data directory"""
-        dataset_path = self.data_dir / "sales_enriched.parquet"
+        """Persist the dataset, summary tables, and quality report under the data/output directory"""
+        dataset_path = self.output_dir / "sales_enriched.parquet"
         df.to_parquet(dataset_path, index=False)
         logger.info("Saved enriched dataset to %s", dataset_path)
 
         for name, table in summaries.items():
-            output_path = self.data_dir / f"{name}.csv"
+            output_path = self.output_dir / f"{name}.csv"
             table.to_csv(output_path, index=False)
             logger.info("Saved %s summary to %s", name, output_path)
 
-        quality_path = self.data_dir / "quality_report.json"
+        quality_path = self.output_dir / "quality_report.json"
         quality_path.write_text(json.dumps(quality_results, indent=2))
         logger.info("Saved data quality report to %s", quality_path)
 
@@ -341,14 +340,13 @@ class SalesETL:
 
         logger.info("Persisted analytics tables into %s", self.warehouse_path)
 
-    # Entry point
     def run(
         self,
         num_synthetic_rows: int = 10_000,
         **kwargs,
     ) -> pd.DataFrame:
         """Execute the full pipeline."""
-        train_csv = self.data_dir / "train.csv"
+        train_csv = self.input_dir / "train.csv"
 
         if train_csv.exists():
             csv = Path(train_csv)
@@ -368,7 +366,6 @@ class SalesETL:
         self.load_into_warehouse(transformed_df, summaries)
 
         return transformed_df
-
 
 if __name__ == "__main__":
     etl = SalesETL()

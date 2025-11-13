@@ -1,0 +1,9 @@
+{
+  "order_id_not_null": true,
+  "customer_id_not_null": true,
+  "sales_not_null": true,
+  "order_date_not_null": true,
+  "sales_positive": true,
+  "order_year_valid_range": true,
+  "overall_success": true
+}
