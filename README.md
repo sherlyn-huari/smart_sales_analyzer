@@ -1,10 +1,10 @@
 # Smart Sales Analyzer
-Lightweight ETL pipeline that blends Kaggle sales data with synthetic records, cleans and validates the dataset with Great Expectations, and stores curated outputs (CSV/Parquet + DuckDB) for analytics or dashboards.
+ETL pipeline that blends Kaggle sales data with synthetic records, cleans and validates the dataset with Great Expectations, and stores curated outputs (CSV/Parquet + DuckDB) for analytics
 
 ## What You Get
 - `src/etl.py` – full pipeline: download → clean → enrich → summaries → DuckDB.
 - `src/synthetic_data_generator.py` – deterministic faker-based data generator.
-- `src/dashboard.py` – optional Streamlit view over the gold tables.
+- `src/dashboard.py` – Streamlit view over the gold tables.
 - `data/input`, `data/output` – landing spots for raw and processed files.
 
 ## Requirements
@@ -46,7 +46,7 @@ What happens:
 - `data/output/sales_analytics.duckdb` – warehouse-style tables mirroring the gold layer.
 - `etl_pipeline.log` – run history (info/warnings/errors).
 
-## Streamlit Dashboard (optional)
+## Streamlit Dashboard
 ```bash
 source .venv/bin/activate
 streamlit run src/dashboard.py
@@ -57,5 +57,3 @@ This reads the CSV summaries/DuckDB file to validate metrics interactively.
 - **Kaggle download failed / DNS error** – run on a machine with internet access or place `train.csv` manually in `data/input/`.
 - **“Could not find local file-backed GX project”** – harmless; Great Expectations will run in ephemeral mode unless you initialize a `great_expectations/` directory.
 - **Duplicate “Generating synthetic rows” logs** – expected; the generator logs progress, so the ETL no longer emits its own duplicate message.
-
-That’s it—run the ETL locally for free, then containerize or port the same script into AWS Glue/Athena when you need a managed deployment.
