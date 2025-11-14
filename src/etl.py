@@ -5,6 +5,7 @@ import os
 import warnings
 import json
 import polars as pl
+import numpy as np
 import shutil
 from pathlib import Path
 from typing import Dict, Optional
@@ -161,6 +162,13 @@ class SalesETL:
                     len(base_df), synthetic_rows)
 
         return pd.concat([base_df, synthetic_df], ignore_index=True)
+    
+    def add_quantity(self, df: pd.DataFrame,  min_amount: int = 1 , max_amount: int = 999, seed: int | None = None) -> pd.DataFrame:
+        """Add a quantity column"""
+        if seed is not None:
+            np.random.seed(seed)
+        df["quantity"] = np.random.randint(min_amount, max_amount +1, size =len(df))
+        return df 
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform raw data: standardize columns, extract dates, calculate metrics"""
@@ -359,7 +367,8 @@ class SalesETL:
 
         base_df = self.load_base_dataset(csv)
         combined_df = self.build_dataset(base_df, num_synthetic_rows=num_synthetic_rows, **kwargs)
-        transformed_df = self.transform(combined_df)
+        completed_df = self.add_quantity(combined_df,seed=43)
+        transformed_df = self.transform(completed_df)
         summaries = self.build_summaries(transformed_df)
         quality_results = self.run_quality_checks(transformed_df)
         self.persist_outputs(transformed_df, summaries, quality_results)
