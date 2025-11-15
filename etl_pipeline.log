@@ -525,3 +525,263 @@ Please make sure you specified the correct resource identifiers.
 2025-11-14 01:16:54,067 - INFO - Saved top_products summary to data/output/top_products.csv
 2025-11-14 01:16:54,067 - INFO - Saved data quality report to data/output/quality_report.json
 2025-11-14 01:16:54,452 - INFO - Persisted analytics tables into data/output/sales_analytics.duckdb
+2025-11-15 00:16:50,762 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:18:09,336 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:18:09,392 - INFO - Removed 11 rows containing null values
+2025-11-15 00:18:09,395 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:18:09,395 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:21:03,964 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:21:04,010 - INFO - Removed 11 rows containing null values
+2025-11-15 00:21:04,011 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:21:04,011 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:21:04,208 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:21:04,234 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:21:07,171 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:21:07,173 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:28:16,823 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:28:16,869 - INFO - Removed 11 rows containing null values
+2025-11-15 00:28:16,870 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:28:16,870 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:28:17,068 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:28:17,080 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:28:19,833 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:28:19,835 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:28:49,312 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:28:49,355 - INFO - Removed 11 rows containing null values
+2025-11-15 00:28:49,356 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:28:49,356 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:28:49,548 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:28:49,553 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:28:52,392 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:28:52,394 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:28:52,399 - INFO - update_df schema: Schema({'Order ID': String, 'Order Date': Date, 'Ship Date': Date, 'Ship Mode': String, 'Customer ID': String, 'Customer Name': String, 'Segment': String, 'Country': String, 'City': String, 'State': String, 'Postal Code': Float64, 'Region': String, 'Category': String, 'Sub-Category': String, 'Product ID': String, 'Product Name': String, 'Sales': Float64})
+2025-11-15 00:28:52,399 - INFO - synthetic_df schema: Schema({'Order ID': String, 'Order Date': Date, 'Ship Date': Date, 'Ship Mode': String, 'Customer ID': String, 'Customer Name': String, 'Segment': String, 'Country': String, 'City': String, 'State': String, 'Postal Code': String, 'Region': String, 'Category': String, 'Sub-Category': String, 'Product ID': String, 'Product Name': String, 'Sales': Float64})
+2025-11-15 00:29:11,640 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:29:11,691 - INFO - Removed 11 rows containing null values
+2025-11-15 00:29:11,693 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:29:11,693 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:29:11,911 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:29:11,927 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:29:14,836 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:29:14,838 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:29:14,838 - INFO - update_df schema: Schema({'Order ID': String, 'Order Date': Date, 'Ship Date': Date, 'Ship Mode': String, 'Customer ID': String, 'Customer Name': String, 'Segment': String, 'Country': String, 'City': String, 'State': String, 'Postal Code': String, 'Region': String, 'Category': String, 'Sub-Category': String, 'Product ID': String, 'Product Name': String, 'Sales': Float64})
+2025-11-15 00:29:14,838 - INFO - synthetic_df schema: Schema({'Order ID': String, 'Order Date': Date, 'Ship Date': Date, 'Ship Mode': String, 'Customer ID': String, 'Customer Name': String, 'Segment': String, 'Country': String, 'City': String, 'State': String, 'Postal Code': String, 'Region': String, 'Category': String, 'Sub-Category': String, 'Product ID': String, 'Product Name': String, 'Sales': Float64})
+2025-11-15 00:29:35,593 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:29:35,638 - INFO - Removed 11 rows containing null values
+2025-11-15 00:29:35,639 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:29:35,639 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:29:35,847 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:29:35,853 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:29:38,753 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:29:38,754 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:29:38,754 - INFO - update_df schema: Schema({'Order ID': String, 'Order Date': Date, 'Ship Date': Date, 'Ship Mode': String, 'Customer ID': String, 'Customer Name': String, 'Segment': String, 'Country': String, 'City': String, 'State': String, 'Postal Code': String, 'Region': String, 'Category': String, 'Sub-Category': String, 'Product ID': String, 'Product Name': String, 'Sales': Float64})
+2025-11-15 00:29:38,754 - INFO - synthetic_df schema: Schema({'Order ID': String, 'Order Date': Date, 'Ship Date': Date, 'Ship Mode': String, 'Customer ID': String, 'Customer Name': String, 'Segment': String, 'Country': String, 'City': String, 'State': String, 'Postal Code': String, 'Region': String, 'Category': String, 'Sub-Category': String, 'Product ID': String, 'Product Name': String, 'Sales': Float64})
+2025-11-15 00:29:38,845 - INFO - Could not find local file-backed GX project
+2025-11-15 00:29:38,845 - INFO - Created temporary directory '/tmp/tmpbqsq_bp9' for ephemeral docs site
+2025-11-15 00:29:38,845 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:29:38,920 - INFO - Data quality checks success=True
+2025-11-15 00:29:38,968 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:29:38,970 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:29:38,970 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:29:38,970 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:29:38,971 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:29:38,971 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:29:39,020 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 00:29:55,540 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:29:55,588 - INFO - Removed 11 rows containing null values
+2025-11-15 00:29:55,589 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:29:55,590 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:29:55,799 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:29:55,804 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:29:58,779 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:29:58,781 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:29:58,851 - INFO - Could not find local file-backed GX project
+2025-11-15 00:29:58,852 - INFO - Created temporary directory '/tmp/tmpeo_4il5_' for ephemeral docs site
+2025-11-15 00:29:58,852 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:29:58,916 - INFO - Data quality checks success=True
+2025-11-15 00:29:58,952 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:29:58,953 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:29:58,954 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:29:58,954 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:29:58,954 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:29:58,954 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:29:58,984 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 00:32:23,140 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:32:23,186 - INFO - Removed 11 rows containing null values
+2025-11-15 00:32:23,187 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:32:23,188 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:32:23,393 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:32:23,399 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:32:26,389 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:32:26,405 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:32:26,466 - INFO - Could not find local file-backed GX project
+2025-11-15 00:32:26,466 - INFO - Created temporary directory '/tmp/tmpi6_m6vwb' for ephemeral docs site
+2025-11-15 00:32:26,466 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:32:26,539 - INFO - Data quality checks success=True
+2025-11-15 00:32:26,575 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:32:26,581 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:32:26,581 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:32:26,581 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:32:26,582 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:32:26,582 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:32:26,613 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 00:32:54,948 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:32:54,998 - INFO - Removed 11 rows containing null values
+2025-11-15 00:32:54,999 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:32:54,999 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:32:55,153 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:32:55,159 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:32:58,192 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:32:58,207 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:32:58,267 - INFO - Could not find local file-backed GX project
+2025-11-15 00:32:58,268 - INFO - Created temporary directory '/tmp/tmpwm9_u4di' for ephemeral docs site
+2025-11-15 00:32:58,268 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:32:58,340 - INFO - Data quality checks success=True
+2025-11-15 00:32:58,376 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:32:58,381 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:32:58,381 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:32:58,381 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:32:58,382 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:32:58,382 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:32:58,414 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 00:47:16,603 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:47:16,649 - INFO - Removed 11 rows containing null values
+2025-11-15 00:47:16,651 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:47:16,651 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:47:16,791 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:47:16,797 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:47:19,598 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:47:19,615 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:47:19,673 - INFO - Could not find local file-backed GX project
+2025-11-15 00:47:19,674 - INFO - Created temporary directory '/tmp/tmpi2z59h1t' for ephemeral docs site
+2025-11-15 00:47:19,674 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:47:19,750 - INFO - Data quality checks success=True
+2025-11-15 00:47:19,787 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:47:19,792 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:47:19,793 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:47:19,793 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:47:19,793 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:47:19,793 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:47:19,823 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 00:51:53,718 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:51:53,764 - INFO - Removed 11 rows containing null values
+2025-11-15 00:51:53,765 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:51:53,765 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:51:53,959 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:51:53,964 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:52:22,125 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:52:22,171 - INFO - Removed 11 rows containing null values
+2025-11-15 00:52:22,172 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:52:22,172 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:52:22,364 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:52:22,370 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:52:25,141 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:52:25,159 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:52:25,217 - INFO - Could not find local file-backed GX project
+2025-11-15 00:52:25,217 - INFO - Created temporary directory '/tmp/tmpgtjeiwot' for ephemeral docs site
+2025-11-15 00:52:25,217 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:52:25,290 - INFO - Data quality checks success=True
+2025-11-15 00:52:25,329 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:52:25,330 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:52:25,331 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:52:25,331 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:52:25,331 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:52:25,331 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:52:25,362 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 00:58:47,737 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:58:47,787 - INFO - Removed 11 rows containing null values
+2025-11-15 00:58:47,788 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:58:47,788 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:58:47,936 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:58:47,942 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:58:50,961 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:58:50,980 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:58:51,043 - INFO - Could not find local file-backed GX project
+2025-11-15 00:58:51,043 - INFO - Created temporary directory '/tmp/tmpjvsi3hps' for ephemeral docs site
+2025-11-15 00:58:51,043 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:58:51,117 - INFO - Data quality checks success=True
+2025-11-15 00:58:51,162 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:58:51,163 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:58:51,164 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:58:51,164 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:58:51,164 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:58:51,165 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:58:51,195 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 00:59:16,089 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 00:59:16,139 - INFO - Removed 11 rows containing null values
+2025-11-15 00:59:16,141 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 00:59:16,141 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 00:59:16,287 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 00:59:16,293 - INFO - Generating 10000 synthetic rows...
+2025-11-15 00:59:19,170 - INFO - Successfully generated 10000 synthetic rows
+2025-11-15 00:59:19,188 - INFO - Combining 9789 Kaggle rows with 10000 synthetic rows
+2025-11-15 00:59:19,253 - INFO - Could not find local file-backed GX project
+2025-11-15 00:59:19,254 - INFO - Created temporary directory '/tmp/tmpq1cwhizv' for ephemeral docs site
+2025-11-15 00:59:19,254 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 00:59:19,331 - INFO - Data quality checks success=True
+2025-11-15 00:59:19,373 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 00:59:19,374 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 00:59:19,374 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 00:59:19,375 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 00:59:19,375 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 00:59:19,375 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 00:59:19,407 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 01:12:47,714 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 01:12:47,760 - INFO - Removed 11 rows containing null values
+2025-11-15 01:12:47,762 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 01:13:16,681 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 01:13:16,727 - INFO - Removed 11 rows containing null values
+2025-11-15 01:13:16,728 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 01:13:16,728 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 01:18:47,343 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 01:18:47,388 - INFO - Removed 11 rows containing null values
+2025-11-15 01:18:47,389 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 01:18:47,389 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 01:19:40,245 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 01:19:40,291 - INFO - Removed 11 rows containing null values
+2025-11-15 01:19:40,292 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 01:19:40,292 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 01:19:40,485 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 01:19:40,489 - INFO - Generating 100000 synthetic rows...
+2025-11-15 01:20:09,376 - INFO - Successfully generated 100000 synthetic rows
+2025-11-15 01:20:09,480 - INFO - Combining 9789 Kaggle rows with 100000 synthetic rows
+2025-11-15 01:20:09,596 - INFO - Could not find local file-backed GX project
+2025-11-15 01:20:09,596 - INFO - Created temporary directory '/tmp/tmpr6rmdabs' for ephemeral docs site
+2025-11-15 01:20:09,596 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 01:20:09,866 - INFO - Data quality checks success=True
+2025-11-15 01:20:10,021 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 01:20:10,022 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 01:20:10,023 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 01:20:10,023 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 01:20:10,023 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 01:20:10,024 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 01:20:10,056 - INFO - Load summary tables into data/output/sales_analytics.duckdb
+2025-11-15 01:29:38,377 - INFO - Initialized SyntheticDataGenerator with seed=42
+2025-11-15 01:29:38,426 - INFO - Removed 11 rows containing null values
+2025-11-15 01:29:38,427 - INFO - Removed columns: ['Row ID', 'Order ID', 'Order Date', 'Ship Date']  
+2025-11-15 01:29:38,427 - INFO - loading data from Kaggle for an update of dates
+2025-11-15 01:29:38,576 - INFO - Successfully updated the date in 9789 rows in the kaggle dataset
+2025-11-15 01:29:38,581 - INFO - Generating 100000 synthetic rows...
+2025-11-15 01:30:07,140 - INFO - Successfully generated 100000 synthetic rows
+2025-11-15 01:30:07,238 - INFO - Combining 9789 Kaggle rows with 100000 synthetic rows
+2025-11-15 01:30:07,352 - INFO - Could not find local file-backed GX project
+2025-11-15 01:30:07,353 - INFO - Created temporary directory '/tmp/tmp40mzaq52' for ephemeral docs site
+2025-11-15 01:30:07,353 - INFO - Loading 'datasources' ->
+[]
+2025-11-15 01:30:07,617 - INFO - Data quality checks success=True
+2025-11-15 01:30:07,785 - INFO - Saved enriched dataset to data/output/sales_enriched.parquet
+2025-11-15 01:30:07,786 - INFO - Saved yearly summary to data/output/yearly.csv
+2025-11-15 01:30:07,787 - INFO - Saved segment_yearly summary to data/output/segment_yearly.csv
+2025-11-15 01:30:07,787 - INFO - Saved regional_revenue summary to data/output/regional_revenue.csv
+2025-11-15 01:30:07,787 - INFO - Saved top_products summary to data/output/top_products.csv
+2025-11-15 01:30:07,788 - INFO - Saved data quality report to data/output/quality_report.json
+2025-11-15 01:30:07,819 - INFO - Load summary tables into data/output/sales_analytics.duckdb

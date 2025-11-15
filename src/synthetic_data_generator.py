@@ -45,21 +45,6 @@ class SyntheticDataGenerator:
         "Atlanta": {"state": "Georgia", "zip_prefix": "303", "region": "South"},
     }
 
-    CATEGORIES = {
-        "Furniture": {"Bookcases", "Chairs", "Furnishings", "Tables"},
-        "Office Supplies": {
-            "Appliances",
-            "Art",
-            "Binders",
-            "Envelopes",
-            "Fasteners",
-            "Labels",
-            "Paper",
-            "Storage",
-            "Supplies",
-        },
-        "Technology": {"Accessories", "Copiers", "Machines", "Phones"},
-    } 
     def __init__(self, input_dir: str | Path = "data/input", seed: int = 42, locale: str = "en_US") -> None:
         """Initialize the synthetic data generator"""
         self.input_dir = Path(input_dir)
@@ -139,7 +124,7 @@ class SyntheticDataGenerator:
         logger.info("loading data from Kaggle for an update of dates")
 
         kaggle_df = pl.from_pandas(kaggle_df)
-        num_rows = kaggle_df.height()
+        num_rows = kaggle_df.height
 
         order_ship_pairs= [self.generate_order_dates(start_date=start_date, end_date=end_date)
                              for i in range(num_rows)]
@@ -168,14 +153,17 @@ class SyntheticDataGenerator:
 
         synthetic_rows = []
 
-        for i in range(num_rows):
+        for _ in range(num_rows):
             customer_name = self.generate_customer_name()
             customer_id = self.generate_customer_id(customer_name)
             order_date, ship_date = self.generate_order_dates(
                 start_date=start_date, end_date=end_date )
             order_id = self.generate_order_id(order_date)
             location = self.generate_location_data()
-            category, sub_category, product_name = self.generate_category_product()
+            product_data = self.generate_category_product()
+            category = product_data["Category"]
+            sub_category = product_data["Sub-Category"]
+            product_name = product_data["Product"]
             product_id = self.generate_product_id(category, sub_category)
             sales = self.generate_sales_amount(min_amount=10, max_amount=2900)
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import os
 import warnings
+import pyarrow as pa
 import json
-import polars as pl
 import numpy as np
 import shutil
 from pathlib import Path
@@ -30,7 +30,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class SalesETL:
-
     def __init__(self, input_dir: Path | str = "data/input" , output_dir: str | Path = "data/output") -> None:
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir) 
@@ -40,9 +39,9 @@ class SalesETL:
         self.df: Optional[pd.DataFrame] = None
         self.warehouse_path = self.output_dir / "sales_analytics.duckdb"
         self.dataset_slug = "rohitsahoo/sales-forecasting"
-        self._setup_kaggle_credentials()
+        self.setup_kaggle_credentials()
     
-    def _setup_kaggle_credentials(self) -> None:
+    def setup_kaggle_credentials(self) -> None:
         """Load kaggle credentials from .env"""
         load_dotenv()
         missing: list[str] = []
@@ -63,7 +62,7 @@ class SalesETL:
             logger.debug("Kaggle credentials loaded from environment")
 
     def download_kaggle_dataset(self,force: bool = False ) -> Optional[Path]:
-        """Download dataset into the data directory"""
+        """Download kaggle dataset into data/input"""
         try:
             logger.info("Downloading dataset %s ", self.dataset_slug)
             download_path = Path(kagglehub.dataset_download(self.dataset_slug))
@@ -81,26 +80,7 @@ class SalesETL:
             logger.error("Dataset download failed for %s", exc)
             return None
 
-    def _fix_format_csv(self, csv_path: Path) -> None:
-        """Check CSV issues before loading (extra commas)"""
-        if not csv_path.exists():
-            return None
-
-        replacements = {
-            "Flash Drive, 16GB": "Flash Drive 16GB",
-            "Flash Drive, 32GB": "Flash Drive 32GB",
-        }
-
-        content = csv_path.read_text(encoding="utf-8")
-        cleaned = content
-        for needle, fix in replacements.items():
-            cleaned = cleaned.replace(needle, fix)
-
-        if cleaned != content:
-            csv_path.write_text(cleaned, encoding="utf-8")
-            logger.debug("Patched Kaggle dataset CSV to fix malformed product names.")
-
-    def _clean_csv(self, csv_path: Path) -> Optional[pd.DataFrame]:
+    def clean_csv(self, csv_path: Path) -> Optional[pd.DataFrame]:
         """Clean a CSV by removing unnamed columns and any rows with null values"""
         if not csv_path.exists():
             logger.warning("Missing csv at %s", csv_path)
@@ -123,48 +103,40 @@ class SalesETL:
         logger.info("Removed columns: %s  ", removed_columns)
         return df
     
-    def load_base_dataset(self, csv_path: Path) -> Optional[pd.DataFrame]:
-        """Load and clean the base dataset from CSV."""
-        if csv_path is None or not csv_path.exists():
-            logger.warning("CSV path does not exist: %s", csv_path)
-            return None
-
-        self._fix_format_csv(csv_path)
-        return self._clean_csv(csv_path)
-
     def build_dataset(
         self,
         base_df: Optional[pd.DataFrame],
-        num_synthetic_rows: int = 10_000,
-        start_date = date(2024,1,1),
-        end_date = date(2025,1,1)
+        num_synthetic_rows: int = 100_000,
+        start_date = date(2023,1,1),
+        end_date = date(2025,12,31),
+        min_amount: int = 1,
+        max_amount: int = 999,
+        seed: int=43
     ) -> pd.DataFrame:
-        """Combine kaggle data where order_date it is in the year of 2017 or major 
-          with synthetic data"""
-        
-        update_df  = self.synthetic_generator.update_data( kaggle_df= base_df,start_date = start_date, end_date=end_date)
-        synthetic_df = self.synthetic_generator.generate_synthetic_data( 
-                num_rows=num_synthetic_rows,start_date = start_date, end_date=end_date ) # Here  add the updated date function and add row_id coumn 
-        
-        updated_rows = update_df.height
-        synthetic_rows = synthetic_df.height
+        """Combine kaggle data where order_date it is in the year of 2017 or major
+          with synthetic data
+          - Add row_id and quantity colum """
 
+        update_df  = self.synthetic_generator.update_data(kaggle_df= base_df,start_date = start_date, end_date=end_date)
+        synthetic_df = self.synthetic_generator.generate_synthetic_data(
+                num_rows=num_synthetic_rows,start_date = start_date, end_date=end_date )
+
+        # Convert to pandas
+        update_df_pd = update_df.to_pandas()
+        synthetic_df_pd = synthetic_df.to_pandas()
+
+        updated_rows = len(update_df_pd)
+        synthetic_rows = len(synthetic_df_pd)
+
+        combined = pd.concat([update_df_pd, synthetic_df_pd], ignore_index=True)
+
+        combined["row_id"] = range(1, len(combined) + 1)
+        combined["quantity"] = np.random.randint(min_amount, max_amount +1, size =len(combined))
+        
         logger.info("Combining %s Kaggle rows with %s synthetic rows",
                     updated_rows, synthetic_rows)
-        
-        combined = pl.concat([update_df, synthetic_df], how="vertical")
-
-        # add the Row ID
-        combined = combined.with_columns( pl.arange(1, combined.height() + 1).alias("row_id"))
         return combined
     
-    def add_quantity(self, df: pd.DataFrame,  min_amount: int = 1 , max_amount: int = 999, seed: int | None = None) -> pd.DataFrame:
-        """Add a quantity column"""
-        if seed is not None:
-            np.random.seed(seed)
-        df["quantity"] = np.random.randint(min_amount, max_amount +1, size =len(df))
-        return df 
-
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform raw data: standardize columns, extract dates, calculate metrics"""
         rename_map: Dict[str, str] = {
@@ -323,15 +295,6 @@ class SalesETL:
     ) -> None:
         """Load datasets into DuckDB"""
         with duckdb.connect(str(self.warehouse_path)) as conn:
-            conn.execute("CREATE SCHEMA IF NOT EXISTS analytics")
-            import pyarrow as pa
-            arrow_table = pa.Table.from_pandas(df)
-            conn.register("sales_dataset", arrow_table)
-            conn.execute(
-                "CREATE OR REPLACE TABLE analytics.sales AS SELECT * FROM sales_dataset"
-            )
-            conn.unregister("sales_dataset")
-
             for name, table in summaries.items():
                 view_name = f"{name}_summary"
                 arrow_summary = pa.Table.from_pandas(table)
@@ -341,11 +304,11 @@ class SalesETL:
                 )
                 conn.unregister(view_name)
 
-        logger.info("Persisted analytics tables into %s", self.warehouse_path)
+        logger.info("Load summary tables into %s", self.warehouse_path)
 
     def run(
         self,
-        num_synthetic_rows: int = 10_000,
+        num_synthetic_rows: int = 100_000,
         **kwargs,
     ) -> pd.DataFrame:
         """Execute the pipeline"""
@@ -354,16 +317,15 @@ class SalesETL:
         if train_csv.exists():
             csv = Path(train_csv)
         else:
-            self._setup_kaggle_credentials()
+            self.setup_kaggle_credentials()
             csv = self.download_kaggle_dataset()
         
         if csv is None:
             raise ValueError("Failed to obtain dataset from Kaggle")
 
-        base_df = self.load_base_dataset(csv)
+        base_df = self.clean_csv(csv)
         combined_df = self.build_dataset(base_df, num_synthetic_rows=num_synthetic_rows, **kwargs)
-        completed_df = self.add_quantity(combined_df,seed=43)
-        transformed_df = self.transform(completed_df)
+        transformed_df = self.transform(combined_df)
         summaries = self.build_summaries(transformed_df)
         quality_results = self.run_quality_checks(transformed_df)
         self.persist_outputs(transformed_df, summaries, quality_results)

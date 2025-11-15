@@ -1,4 +1,4 @@
-"""Streamlit dashboard for Smart Sales Analyzer."""
+"""Streamlit dashboard """
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import altair as alt
 import polars as pl
 import streamlit as st
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data" / "output"
 PARQUET_PATH = DATA_DIR / "sales_enriched.parquet"
 YEARLY_CSV = DATA_DIR / "yearly.csv"
 SEGMENT_CSV = DATA_DIR / "segment_yearly.csv"
@@ -35,7 +35,7 @@ def load_summary(path: Path) -> pl.DataFrame | None:
 def main() -> None:
     st.set_page_config(page_title="Smart Sales Analyzer", layout="wide")
     st.title("📊 Smart Sales Analyzer Dashboard")
-    st.caption("Kaggle dataset augmented with 5000 locally generated synthetic rows.")
+    st.caption("Kaggle dataset augmented with 100000 locally generated synthetic rows.")
 
     try:
         dataset = load_dataset()
