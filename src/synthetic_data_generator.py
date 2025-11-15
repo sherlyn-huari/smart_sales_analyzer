@@ -110,7 +110,7 @@ class SyntheticDataGenerator:
         """Generate an order identifier (e.g. US-2016-118983)"""
         return f"US-{order_date.year}-{random.randint(100000, 999999)}"
 
-    def generate_sales_amount(self, min_amount: int = 20, max_amount: int = 2000) -> float:
+    def generate_sales_amount(self, min_amount: int = 20, max_amount: int = 30) -> float:
         """Generate a sales amount"""
         return float(random.randint(min_amount, max_amount))
 

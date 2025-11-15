@@ -21,6 +21,7 @@ from great_expectations.core.expectation_suite import ExpectationSuite
 from great_expectations.execution_engine import PandasExecutionEngine
 from great_expectations.validator.validator import Validator
 from synthetic_data_generator import SyntheticDataGenerator
+from build_dimensional_model import DimensionalModelBuilder
 
 logging.basicConfig(
     level=logging.INFO,
@@ -292,9 +293,21 @@ class SalesETL:
         self,
         df: pd.DataFrame,
         summaries: Dict[str, pd.DataFrame],
+        build_star_schema: bool = True,
     ) -> None:
-        """Load datasets into DuckDB"""
+        """Load datasets into DuckDB and optionally build dimensional model"""
+
         with duckdb.connect(str(self.warehouse_path)) as conn:
+            # main sales table
+            logger.info("Loading main sales table into warehouse")
+            arrow_sales = pa.Table.from_pandas(df)
+            conn.register("sales_temp", arrow_sales)
+            conn.execute(
+                "CREATE OR REPLACE TABLE analytics.sales AS SELECT * FROM sales_temp"
+            )
+            conn.unregister("sales_temp")
+
+
             for name, table in summaries.items():
                 view_name = f"{name}_summary"
                 arrow_summary = pa.Table.from_pandas(table)
@@ -304,11 +317,24 @@ class SalesETL:
                 )
                 conn.unregister(view_name)
 
-        logger.info("Load summary tables into %s", self.warehouse_path)
+        logger.info("Loaded summary tables into %s", self.warehouse_path)
+
+
+        if build_star_schema:
+            logger.info("Building dimensional model (star schema)")
+            try:
+                dim_builder = DimensionalModelBuilder(warehouse_path=self.warehouse_path)
+                dim_builder.build_all()
+                dim_builder.close()
+                logger.info("Dimensional model built successfully")
+            except Exception as exc:
+                logger.error("Failed to build dimensional model: %s", exc)
+                logger.warning("Continuing without dimensional model")
 
     def run(
         self,
         num_synthetic_rows: int = 100_000,
+        build_star_schema: bool = True,
         **kwargs,
     ) -> pd.DataFrame:
         """Execute the pipeline"""
@@ -319,7 +345,7 @@ class SalesETL:
         else:
             self.setup_kaggle_credentials()
             csv = self.download_kaggle_dataset()
-        
+
         if csv is None:
             raise ValueError("Failed to obtain dataset from Kaggle")
 
@@ -329,7 +355,7 @@ class SalesETL:
         summaries = self.build_summaries(transformed_df)
         quality_results = self.run_quality_checks(transformed_df)
         self.persist_outputs(transformed_df, summaries, quality_results)
-        self.load_into_warehouse(transformed_df, summaries)
+        self.load_into_warehouse(transformed_df, summaries, build_star_schema=build_star_schema)
 
         return transformed_df
 
