@@ -69,20 +69,17 @@ class SyntheticDataGenerator:
         number = random.randint(10000, 99999)
         return f"{initials.upper()}-{number}"
 
-    def generate_order_dates(
-        self,
-        start_date: date,
-        end_date: date,
-        min_ship_days: int = 1,
-        max_ship_days: int = 9,
-    ) -> tuple[date, date]:
-        """Generate order and ship dates (ship date after order date)"""
+    def generate_order_date( self, start_date: date, end_date: date ) -> date:
+        """Generate order date"""
         order_date = self.fake.date_between(start_date=start_date, end_date=end_date)
-        ship_date = self.fake.date_between(
+        return order_date
+    
+    def generate_ship_date(self, order_date: date, min_ship_days: int = 1 , max_ship_days: int = 7)-> date:
+        """Generate ship_date"""
+        ship_date =  self.fake.date_between(
             start_date=order_date + timedelta(days=min_ship_days),
-            end_date=order_date + timedelta(days=max_ship_days),
-        )
-        return order_date, ship_date
+            end_date=order_date + timedelta(days=max_ship_days) )
+        return ship_date
 
     def generate_location_data(self) -> dict[str, str]:
         """Generate city, state, postal code and region"""
@@ -120,25 +117,38 @@ class SyntheticDataGenerator:
         sub_abbr = subcategory[:2].upper()
         return f"{cat_abbr}-{sub_abbr}-100{random.randint(10000, 99999)}"
     
-    def update_data(self, kaggle_df: Optional[pd.DataFrame], start_date: date=date(2024,1,1), end_date: date=date(2025,1,1))-> pl.DataFrame:
-        logger.info("loading data from Kaggle for an update of dates")
+    def update_data(self, kaggle_df: Optional[pd.DataFrame],
+                     start_date: date=date(2024,1,1), end_date: date=date(2025,1,1))-> pl.DataFrame:
+        """Update the date of the dataset downloaded from Kaggle"""
 
         kaggle_df = pl.from_pandas(kaggle_df)
         num_rows = kaggle_df.height
+        updated_rows = []
 
-        order_ship_pairs= [self.generate_order_dates(start_date=start_date, end_date=end_date)
-                             for i in range(num_rows)]
-        order_dates = [pair[0] for pair in order_ship_pairs]
-        ship_dates = [pair[1] for pair in order_ship_pairs]
-        order_ids = [self.generate_order_id(d) for d in order_dates ]
-        
+        for i in range(num_rows):
+            order_date = self.generate_order_date(start_date = start_date, end_date = end_date)
+            ship_date = self.generate_ship_date(order_date=order_date)
+            order_id = self.generate_order_id(order_date=order_date)
+            product_data = self.generate_category_product()
+            category = product_data["Category"]
+            sub_category = product_data["Sub-Category"]
+            product_name = product_data["Product"]
+            product_id = self.generate_product_id(category, sub_category)
+
+            row =  {
+                "Order ID": order_id,
+                "Order Date": order_date,
+                "Ship Date": ship_date,
+                "Category": category,
+                "Sub-Category": sub_category,
+                "Product ID": product_id,
+                "Product Name": product_name,
+            }
+            updated_rows.append(row)
+
+        kaggle_df = pl.DataFrame(updated_rows)
+
         logger.info("Successfully updated the date in %s rows in the kaggle dataset", num_rows)
-        
-        kaggle_df = kaggle_df.with_columns([
-            pl.Series("Order Date", order_dates),
-            pl.Series("Ship Date", ship_dates),
-            pl.Series("Order ID", order_ids)
-        ])
         return kaggle_df
     
     def generate_synthetic_data(
@@ -156,8 +166,9 @@ class SyntheticDataGenerator:
         for _ in range(num_rows):
             customer_name = self.generate_customer_name()
             customer_id = self.generate_customer_id(customer_name)
-            order_date, ship_date = self.generate_order_dates(
-                start_date=start_date, end_date=end_date )
+            order_date = self.generate_order_date(
+                start_date=start_date, end_date=end_date)
+            ship_date = self.generate_ship_date(order_date=order_date)
             order_id = self.generate_order_id(order_date)
             location = self.generate_location_data()
             product_data = self.generate_category_product()

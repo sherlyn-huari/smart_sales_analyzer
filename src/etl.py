@@ -99,7 +99,7 @@ class SalesETL:
         rows_removed = initial_rows - len(df)
         logger.info("Removed %s rows containing null values", rows_removed)
 
-        removed_columns = ["Row ID","Order ID","Order Date", "Ship Date"]
+        removed_columns = ["Row ID","Order ID","Order Date", "Ship Date", "Product Name", "Sales"]
         df = df.drop(removed_columns, axis =1)
         logger.info("Removed columns: %s  ", removed_columns)
         return df
@@ -111,25 +111,25 @@ class SalesETL:
         start_date = date(2023,1,1),
         end_date = date(2025,12,31),
         min_amount: int = 1,
-        max_amount: int = 999,
+        max_amount: int = 3,
         seed: int=43
     ) -> pd.DataFrame:
         """Combine kaggle data where order_date it is in the year of 2017 or major
           with synthetic data
           - Add row_id and quantity colum """
 
-        update_df  = self.synthetic_generator.update_data(kaggle_df= base_df,start_date = start_date, end_date=end_date)
+        updated_df  = self.synthetic_generator.update_data(kaggle_df= base_df,start_date = start_date, end_date=end_date)
         synthetic_df = self.synthetic_generator.generate_synthetic_data(
                 num_rows=num_synthetic_rows,start_date = start_date, end_date=end_date )
 
         # Convert to pandas
-        update_df_pd = update_df.to_pandas()
+        updated_df_pd = updated_df.to_pandas()
         synthetic_df_pd = synthetic_df.to_pandas()
 
-        updated_rows = len(update_df_pd)
+        updated_rows = len(updated_df_pd)
         synthetic_rows = len(synthetic_df_pd)
 
-        combined = pd.concat([update_df_pd, synthetic_df_pd], ignore_index=True)
+        combined = pd.concat([updated_df_pd, synthetic_df_pd], ignore_index=True)
 
         combined["row_id"] = range(1, len(combined) + 1)
         combined["quantity"] = np.random.randint(min_amount, max_amount +1, size =len(combined))
