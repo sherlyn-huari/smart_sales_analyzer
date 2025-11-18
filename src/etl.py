@@ -1,20 +1,15 @@
 """Sales Analyzer - ETL pipeline"""
 from __future__ import annotations
 import logging
-import os
 import warnings
 import pyarrow as pa
 import json
-import numpy as np
-import shutil
 from pathlib import Path
 from typing import Dict, Optional
 import duckdb
 import pandas as pd
 from datetime import date
-import kagglehub
 import great_expectations as ge
-from dotenv import load_dotenv
 from great_expectations.core.batch import Batch
 from great_expectations.core.batch_spec import RuntimeDataBatchSpec
 from great_expectations.core.expectation_suite import ExpectationSuite
@@ -31,187 +26,115 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class SalesETL:
-    def __init__(self, input_dir: Path | str = "data/input" , output_dir: str | Path = "data/output") -> None:
+    def __init__(self, input_dir: str | Path = "data/input" , output_dir: str | Path = "data/output",
+                 warehouse_dir: str | Path = "data/output/sales_analytics.duckdb") -> None:
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir) 
+        self.warehouse_dir = Path(warehouse_dir)
         self.input_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok= True)
         self.synthetic_generator = SyntheticDataGenerator()
         self.df: Optional[pd.DataFrame] = None
-        self.warehouse_path = self.output_dir / "sales_analytics.duckdb"
-        self.dataset_slug = "rohitsahoo/sales-forecasting"
-        self.setup_kaggle_credentials()
-    
-    def setup_kaggle_credentials(self) -> None:
-        """Load kaggle credentials from .env"""
-        load_dotenv()
-        missing: list[str] = []
 
-        for var in ("KAGGLE_USERNAME", "KAGGLE_KEY"):
-            value = os.getenv(var)
-            if value:
-                os.environ[var] = value
-            else:
-                missing.append(var)
+    def build_dataset(self, num_synthetic_rows: int = 100_000,
+                      start_date = date(2023,1,1),
+                      end_date = date(2025,12,31),
+                      rebuild: bool = False) -> pd.DataFrame:
+        """Create a dataset of reatil sales of company B2B
+        Args:
+            rebuild: If True, always generate new data. If False, load from file if exists.
+        """
 
-        if missing:
-            logger.warning(
-                "Missing Kaggle credential(s): %s; dataset download may fail",
-                ", ".join(missing),
-            )
-        else:
-            logger.debug("Kaggle credentials loaded from environment")
+        dataset_file = self.output_dir / "synthetic_sales.parquet"
 
-    def download_kaggle_dataset(self,force: bool = False ) -> Optional[Path]:
-        """Download kaggle dataset into data/input"""
-        try:
-            logger.info("Downloading dataset %s ", self.dataset_slug)
-            download_path = Path(kagglehub.dataset_download(self.dataset_slug))
+        if not rebuild and dataset_file.exists():
+            logger.info("Loading existing dataset from %s", dataset_file)
+            self.df = pd.read_parquet(dataset_file)
+            logger.info("Loaded %s rows and %s columns", len(self.df), len(self.df.columns))
+            return self.df
 
-            train_csv = download_path / "train.csv"
-            if train_csv.exists():
-                target = self.input_dir / "train.csv"
-                shutil.copy2(train_csv, target)
-                logger.info("Dataset copied to %s", target)
-                return target
-            else:
-                logger.warning("Dataset download failed")
-                return None
-        except Exception as exc: 
-            logger.error("Dataset download failed for %s", exc)
-            return None
-
-    def clean_csv(self, csv_path: Path) -> Optional[pd.DataFrame]:
-        """Clean a CSV by removing unnamed columns and any rows with null values"""
-        if not csv_path.exists():
-            logger.warning("Missing csv at %s", csv_path)
-            return None
-
-        try:
-            df = pd.read_csv(csv_path, engine="python")
-        except Exception as exc:
-            logger.error("Failed to read csv %s: %s", csv_path, exc)
-            return None
-
-        df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
-        initial_rows = len(df)
-        df = df.dropna(axis=0, how="any")
-        rows_removed = initial_rows - len(df)
-        logger.info("Removed %s rows containing null values", rows_removed)
-
-        removed_columns = ["Row ID","Order ID","Order Date", "Ship Date", "Product Name", "Sales"]
-        df = df.drop(removed_columns, axis =1)
-        logger.info("Removed columns: %s  ", removed_columns)
-        return df
-    
-    def build_dataset(
-        self,
-        base_df: Optional[pd.DataFrame],
-        num_synthetic_rows: int = 100_000,
-        start_date = date(2023,1,1),
-        end_date = date(2025,12,31),
-        min_amount: int = 1,
-        max_amount: int = 3,
-        seed: int=43
-    ) -> pd.DataFrame:
-        """Combine kaggle data where order_date it is in the year of 2017 or major
-          with synthetic data
-          - Add row_id and quantity colum """
-
-        updated_df  = self.synthetic_generator.update_data(kaggle_df= base_df,start_date = start_date, end_date=end_date)
+        logger.info("Generating new synthetic data (rebuild=%s)", rebuild)
         synthetic_df = self.synthetic_generator.generate_synthetic_data(
                 num_rows=num_synthetic_rows,start_date = start_date, end_date=end_date )
 
-        # Convert to pandas
-        updated_df_pd = updated_df.to_pandas()
-        synthetic_df_pd = synthetic_df.to_pandas()
+        synthetic_df = synthetic_df.to_pandas()
+        logger.info("Creating a total of  %s  synthetic rows and %s columns ",
+                    len(synthetic_df), len(synthetic_df.columns))
 
-        updated_rows = len(updated_df_pd)
-        synthetic_rows = len(synthetic_df_pd)
+        synthetic_df.to_parquet(dataset_file)
+        logger.info("Saved dataset to %s", dataset_file)
 
-        combined = pd.concat([updated_df_pd, synthetic_df_pd], ignore_index=True)
-
-        combined["row_id"] = range(1, len(combined) + 1)
-        combined["quantity"] = np.random.randint(min_amount, max_amount +1, size =len(combined))
-        
-        logger.info("Combining %s Kaggle rows with %s synthetic rows",
-                    updated_rows, synthetic_rows)
-        return combined
+        self.df = synthetic_df
+        return synthetic_df
     
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform raw data: standardize columns, extract dates, calculate metrics"""
-        rename_map: Dict[str, str] = {
-            col: col.strip().lower().replace(" ", "_").replace("-", "_")
-            for col in df.columns
-        }
-        transformed = df.rename(columns=rename_map).copy()
+        """Get calculate metrics"""
 
-        if "order_date" in transformed.columns:
-            transformed["order_date"] = pd.to_datetime(transformed["order_date"], errors="coerce", dayfirst=True)
-            null_mask = transformed["order_date"].isna()
-            if null_mask.any():
-                logger.warning("Found %s rows with invalid order_date values", null_mask.sum())
+        if "order_date" in df:
+            df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce", dayfirst=True)
+            df["order_year"] = df["order_date"].dt.year
+            df["order_month"] = df["order_date"].dt.month
 
-            transformed["order_year"] = transformed["order_date"].dt.year
-            transformed["order_month"] = transformed["order_date"].dt.month
+        if "price" in df.columns and "quantity" in df.columns and "discount" in df.columns:
+            df["revenue"] = df["price"] * df["quantity"] * (1 - df["discount"])
+            df["discount_amount"] = df["price"] * df["quantity"] * df["discount"]
+            df["gross_sales"] = df["price"] * df["quantity"]
+        
+        if "ship_latency_days" in df.columns:
+            df["is_late_shipment"] = df["ship_latency_days"] > 3
 
-        if "ship_date" in transformed.columns:
-            transformed["ship_date"] = pd.to_datetime(transformed["ship_date"], errors="coerce", dayfirst=True)
-
-        if "order_date" in transformed.columns and "ship_date" in transformed.columns:
-            transformed["ship_latency_days"] = (transformed["ship_date"] - transformed["order_date"]).dt.days
-
-        if "sales" in transformed.columns:
-            transformed["sales"] = pd.to_numeric(transformed["sales"], errors="coerce")
-
-        if "postal_code" in transformed.columns:
-            transformed["postal_code"] = transformed["postal_code"].astype(str)
-
-        self.df = transformed
-        logger.debug("Transformed dataset with %s rows and %s columns", len(transformed), len(transformed.columns))
-        return transformed
+        self.df = df
+        logger.debug("df dataset with %s rows and %s columns", len(df), len(df.columns))
+        return df
 
     def build_summaries(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
         """Create summary tables for analytics"""
         summaries: Dict[str, pd.DataFrame] = {}
 
-        if "order_year" in df.columns:
+        if "order_year" in df.columns and "revenue" in df.columns:
             summaries["yearly"] = (
                 df.groupby("order_year", as_index=False)
                 .agg(
-                    rows=("order_year", "count"),
-                    revenue=("sales", lambda x: round(x.sum(), 2)),
+                    total_orders=("order_year", "count"),
+                    total_revenue=("revenue", lambda x: round(x.sum(), 2)),
                     unique_customers=("customer_id", "nunique"),
                 )
                 .sort_values("order_year")
             )
 
-        if {"order_year", "segment"}.issubset(df.columns):
+        if {"order_year", "segment", "revenue"}.issubset(df.columns):
             summaries["segment_yearly"] = (
                 df.groupby(["order_year", "segment"], as_index=False)
-                .agg(revenue=("sales", lambda x: round(x.sum(), 2)))
-                .sort_values(["order_year", "revenue"], ascending=[True, False])
+                .agg(
+                    total_revenue=("revenue", lambda x: round(x.sum(), 2)),
+                    total_orders=("segment", "count"),
+                )
+                .sort_values(["order_year", "total_revenue"], ascending=[True, False])
             )
 
-        if "region" in df.columns:
+        if {"region", "revenue"}.issubset(df.columns):
             summaries["regional_revenue"] = (
                 df.groupby("region", as_index=False)
-                .agg(revenue=("sales", lambda x: round(x.sum(), 2)))
-                .sort_values("revenue", ascending=False)
+                .agg(
+                    total_revenue=("revenue", lambda x: round(x.sum(), 2)),
+                    total_orders=("region", "count"),
+                    unique_customers =("customer_id", "nunique"),
+                )
+                .sort_values("total_revenue", ascending=False)
             )
 
-        if "product_name" in df.columns:
+        if {"product_name", "revenue"}.issubset(df.columns):
             summaries["top_products"] = (
                 df.groupby("product_name", as_index=False)
                 .agg(
-                    revenue=("sales", lambda x: round(x.sum(), 2)),
-                    orders=("product_name", "count"),
+                    total_revenue=("revenue", lambda x: round(x.sum(), 2)),
+                    total_orders=("product_name", "count"),
                 )
-                .sort_values("revenue", ascending=False)
-                .head(15)
+                .sort_values("total_revenue", ascending=False)
+                .head(5)
             )
 
-        logger.debug("Built %s summary tables", len(summaries))
+        logger.info("Built %s summary tables", len(summaries))
         return summaries
 
     def run_quality_checks(self, df: pd.DataFrame) -> Dict[str, bool]:
@@ -246,16 +169,22 @@ class SalesETL:
                 category=UserWarning,
             )
 
-            for column in ["order_id", "customer_id", "sales", "order_date"]:
+            for column in ["order_id", "customer_id", "price", "order_date"]:
                 if column in pandas_df.columns:
                     result = validator.expect_column_values_to_not_be_null(column)
                     expectations[f"{column}_not_null"] = bool(result.success)
 
-            if "sales" in pandas_df.columns:
+            if "price" in pandas_df.columns:
                 result = validator.expect_column_values_to_be_between(
-                    "sales", min_value=0, strict_min=True
+                    "price", min_value=0, strict_min=True
                 )
                 expectations["sales_positive"] = bool(result.success)
+                
+            if "quantity" in pandas_df.columns:
+                result = validator.expect_column_values_to_be_between(
+                    "quantity", min_value = 1 , max_value = 100
+                )
+                expectations["quantity_in_range"] = bool(result.success)
 
             if "order_year" in pandas_df.columns:
                 result = validator.expect_column_values_to_be_between(
@@ -291,25 +220,16 @@ class SalesETL:
 
     def load_into_warehouse(
         self,
-        df: pd.DataFrame,
         summaries: Dict[str, pd.DataFrame],
         build_star_schema: bool = True,
     ) -> None:
-        """Load datasets into DuckDB and optionally build dimensional model"""
+        """Load summary tables and dimensional model into DuckDB"""
 
-        with duckdb.connect(str(self.warehouse_path)) as conn:
-            # main sales table
-            logger.info("Loading main sales table into warehouse")
-            arrow_sales = pa.Table.from_pandas(df)
-            conn.register("sales_temp", arrow_sales)
-            conn.execute(
-                "CREATE OR REPLACE TABLE analytics.sales AS SELECT * FROM sales_temp"
-            )
-            conn.unregister("sales_temp")
-
-
+        # Load summary tables
+        with duckdb.connect(str(self.warehouse_dir)) as conn:
             for name, table in summaries.items():
                 view_name = f"{name}_summary"
+                logger.info("Loading %s into warehouse", view_name)
                 arrow_summary = pa.Table.from_pandas(table)
                 conn.register(view_name, arrow_summary)
                 conn.execute(
@@ -317,13 +237,13 @@ class SalesETL:
                 )
                 conn.unregister(view_name)
 
-        logger.info("Loaded summary tables into %s", self.warehouse_path)
+        logger.info("Loaded %s summary tables into %s", len(summaries), self.warehouse_dir)
 
-
+        # Build dimensional model
         if build_star_schema:
             logger.info("Building dimensional model (star schema)")
             try:
-                dim_builder = DimensionalModelBuilder(warehouse_path=self.warehouse_path)
+                dim_builder = DimensionalModelBuilder(warehouse_path=self.warehouse_dir)
                 dim_builder.build_all()
                 dim_builder.close()
                 logger.info("Dimensional model built successfully")
@@ -331,31 +251,17 @@ class SalesETL:
                 logger.error("Failed to build dimensional model: %s", exc)
                 logger.warning("Continuing without dimensional model")
 
-    def run(
-        self,
-        num_synthetic_rows: int = 100_000,
-        build_star_schema: bool = True,
+    def run(self, num_synthetic_rows: int = 10_000, build_star_schema: bool = True,
         **kwargs,
     ) -> pd.DataFrame:
         """Execute the pipeline"""
-        train_csv = self.input_dir / "train.csv"
 
-        if train_csv.exists():
-            csv = Path(train_csv)
-        else:
-            self.setup_kaggle_credentials()
-            csv = self.download_kaggle_dataset()
-
-        if csv is None:
-            raise ValueError("Failed to obtain dataset from Kaggle")
-
-        base_df = self.clean_csv(csv)
-        combined_df = self.build_dataset(base_df, num_synthetic_rows=num_synthetic_rows, **kwargs)
+        combined_df = self.build_dataset(num_synthetic_rows=num_synthetic_rows,rebuild = True)
         transformed_df = self.transform(combined_df)
         summaries = self.build_summaries(transformed_df)
         quality_results = self.run_quality_checks(transformed_df)
         self.persist_outputs(transformed_df, summaries, quality_results)
-        self.load_into_warehouse(transformed_df, summaries, build_star_schema=build_star_schema)
+        #self.load_into_warehouse(summaries, build_star_schema=build_star_schema)
 
         return transformed_df
 

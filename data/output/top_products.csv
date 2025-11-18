@@ -1,16 +1,4 @@
-product_name,revenue,orders
-Canon PC1080F Personal Copier,1051878.9,698
-Canon Imageclass D680 Copier / Fax,1026442.87,700
-Canon imageCLASS 2200 Advanced Copier,995011.82,640
-Canon Image Class D660 Copier,979959.93,665
-Canon PC1060 Personal Laser Copier,969992.87,663
-Brother DCP1000 Digital 3 in 1 Multifunction Machine,959410.84,657
-Canon PC940 Copier,957837.87,650
-Sharp 1540cs Digital Laser Copier,949539.92,642
-Hewlett Packard 610 Color Digital Copier / Printer,943588.82,635
-Sharp AL-1530CS Digital Copier,942527.87,610
-Hewlett Packard LaserJet 3310 Copier,935895.69,639
-Hewlett Packard 310 Color Digital Copier,901938.86,637
-Canon PC-428 Personal Copier,867243.82,604
-"Atlantic Metals Mobile 5-Shelf Bookcases, Custom Colors",297170.88,201
-"Riverside Palais Royal Lawyers Bookcase, Royale Cherry Finish",287773.07,179
+product_name,total_revenue,total_orders
+Basic Printer,7226904.54,5578
+Office Shredder,4372813.33,5510
+Adjustable Standing Desk,3898577.55,5559

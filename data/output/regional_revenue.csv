@@ -1,5 +1,5 @@
-region,revenue
-Central,47258112.91
-West,47021802.68
-South,29654550.46
-East,24039019.36
+region,total_revenue,total_orders
+West,14081759.08,32008
+Central,13997437.02,31938
+South,8676443.04,20014
+East,7014303.78,16040

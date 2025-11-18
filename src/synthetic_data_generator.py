@@ -3,10 +3,8 @@ import json
 import random
 from pathlib import Path
 from datetime import date, datetime, timedelta
-from typing import Optional
 import numpy as np
 import polars as pl
-import pandas as pd
 from faker import Faker
 
 logger = logging.getLogger(__name__)
@@ -44,12 +42,6 @@ class SyntheticDataGenerator:
         "Miami": {"state": "Florida", "zip_prefix": "331", "region": "South"},
         "Atlanta": {"state": "Georgia", "zip_prefix": "303", "region": "South"},
     }
-
-    INDUSTRIES = [
-            'Technology', 'Finance', 'Healthcare', 
-            'Retail', 'Manufacturing', 'Education', 
-            'Consulting', 'Marketing', 'Real Estate'
-        ]
 
     def __init__(self, input_dir: str | Path = "data/input", seed: int = 42, locale: str = "en_US") -> None:
         """Initialize the synthetic data generator"""
@@ -119,17 +111,22 @@ class SyntheticDataGenerator:
         """Generate an order identifier (e.g. US-2016-118983)"""
         return f"US-{order_date.year}-{random.randint(100000, 999999)}"
     
-    def generate_quantity(self, min_amount: int = 0, max_amount: int = 200) -> int:
+    def generate_quantity(self, category: str = None) -> int:
         """Generate quantity"""
-        return random.randint(min_amount, max_amount)
+        if category == "Furniture":
+            return random.randint(1, 5)
+        elif category == "Technology":
+            return random.randint(1,20)
+        else:
+            return random.randint(1,100)
     
     def generate_discount(self, quantity: int) -> float:
         """Generate discount percentages"""
-        if quantity >= 150:
+        if quantity >= 100:
             return  0.15
-        elif quantity >= 100:
+        elif quantity >= 20:
             return 0.10
-        elif quantity >=50:
+        elif quantity >=5:
             return 0.05
         else:
             return 0
@@ -152,7 +149,7 @@ class SyntheticDataGenerator:
 
         synthetic_rows = []
 
-        for _ in range(num_rows):
+        for row_id in range(1, num_rows + 1):
             customer_name = self.generate_customer_name()
             customer_id = self.generate_customer_id(customer_name)
             order_date = self.generate_order_date(
@@ -165,34 +162,32 @@ class SyntheticDataGenerator:
             product_price = product['price']
             product_name = product['name']
             product_id = self.generate_product_id(category, sub_category)
-            discount = self.generate_discount(min_amount=10, max_amount=2900)
-            quantity = self.generate_discount(min_amount=1, max_amount=150)
+            quantity = self.generate_quantity(category= category)
+            discount = self.generate_discount(quantity=quantity)
 
             row = {
-                "Order ID": order_id,
-                "Order Date": order_date,
-                "Ship Date": ship_date,
-                "Ship Mode": ship_mode,
-                "Customer ID": customer_id,
-                "Customer Name": customer_name,
-                "Industry": random.choice(self.INDUSTRIES),
-                "Business Type": random.choice(['Public', 'Private', 'Non-Profit',
-                                                 'Government Contractor']),
-                "Purchasing Frequency": random.choice([
-                'Monthly', 'Quarterly', 'Bi-Annually', 'Annually']),
-                "Segment": random.choice(self.SEGMENTS),
-                "Country": "United States",
-                "City": location["City"],
-                "State": location["State"],
-                "Postal Code": location["Postal Code"],
-                "Region": location["Region"],
-                "Category": category,
-                "Sub-Category": sub_category,
-                "Product ID": product_id,
-                "Product Name": product_name,
-                "Sales": product_price,
-                "Discount": discount,
-                "Quantity": quantity
+                "row_id": row_id,
+                "order_id": order_id,
+                "order_date": order_date,
+                "ship_date": ship_date,
+                "ship_mode": ship_mode,
+                "customer_id": customer_id,
+                "customer_name": customer_name,
+                "purchasing_frequency": random.choice([
+                'Monthly', 'Quarterly', 'Bi-Annually']),
+                "segment": random.choice(self.SEGMENTS),
+                "country": "United States",
+                "city": location["City"],
+                "state": location["State"],
+                "postal_code": location["Postal Code"],
+                "region": location["Region"],
+                "category": category,
+                "sub_category": sub_category,
+                "product_id": product_id,
+                "product_name": product_name,
+                "price": product_price,
+                "quantity": quantity,
+                "discount": discount
             }
             synthetic_rows.append(row)
 
