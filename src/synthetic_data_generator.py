@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class SyntheticDataGenerator:
     """Generate synthetic sales data"""
 
-    SHIP_MODES = ["First Class", "Same Day", "Second Class", "Standard Class"]
+    SHIP_MODES = ["First Class", "Second Class", "Standard Class"]
     SEGMENTS = ["Consumer", "Corporate", "Home Office"]
     US_CITIES = {
         "New York": {"state": "New York", "zip_prefix": "100", "region": "East"},
@@ -45,6 +45,12 @@ class SyntheticDataGenerator:
         "Atlanta": {"state": "Georgia", "zip_prefix": "303", "region": "South"},
     }
 
+    INDUSTRIES = [
+            'Technology', 'Finance', 'Healthcare', 
+            'Retail', 'Manufacturing', 'Education', 
+            'Consulting', 'Marketing', 'Real Estate'
+        ]
+
     def __init__(self, input_dir: str | Path = "data/input", seed: int = 42, locale: str = "en_US") -> None:
         """Initialize the synthetic data generator"""
         self.input_dir = Path(input_dir)
@@ -56,7 +62,7 @@ class SyntheticDataGenerator:
         logger.info("Initialized SyntheticDataGenerator with seed=%s", seed)
 
     def generate_customer_name(self) -> str:
-        """Generate a customer name for the United States locale"""
+        """Generate a customer name"""
         return self.fake.name()
 
     def generate_customer_id(self, customer_name: str) -> str:
@@ -80,7 +86,13 @@ class SyntheticDataGenerator:
             start_date=order_date + timedelta(days=min_ship_days),
             end_date=order_date + timedelta(days=max_ship_days) )
         return ship_date
-
+    
+    def generate_ship_mode(self, order_date: date, ship_date: date, ) -> str:
+        if order_date == ship_date:
+            return "Same Day"
+        else:
+            return random.choice(self.SHIP_MODES)
+    
     def generate_location_data(self) -> dict[str, str]:
         """Generate city, state, postal code and region"""
         city = random.choice(list(self.US_CITIES))
@@ -93,7 +105,7 @@ class SyntheticDataGenerator:
             "Region": city_info["region"],
         }
 
-    def generate_category_product(self) -> dict[str, str]:
+    def generate_product_details(self) -> dict[str, str]:
         """Generate category and sub_category"""
         catalog_path = self.input_dir / "product_catalog.json"
         with catalog_path.open("r") as f:
@@ -101,55 +113,32 @@ class SyntheticDataGenerator:
         category = random.choice(list(product_catalog.keys()))
         sub_category = random.choice(list(product_catalog[category].keys()))
         product = random.choice(list(product_catalog[category][sub_category]))
-        return {"Category": category, "Sub-Category": sub_category,"Product": product }
+        return category, sub_category, product
 
     def generate_order_id(self, order_date: datetime) -> str:
         """Generate an order identifier (e.g. US-2016-118983)"""
         return f"US-{order_date.year}-{random.randint(100000, 999999)}"
-
-    def generate_sales_amount(self, min_amount: int = 20, max_amount: int = 30) -> float:
-        """Generate a sales amount"""
-        return float(random.randint(min_amount, max_amount))
+    
+    def generate_quantity(self, min_amount: int = 0, max_amount: int = 200) -> int:
+        """Generate quantity"""
+        return random.randint(min_amount, max_amount)
+    
+    def generate_discount(self, quantity: int) -> float:
+        """Generate discount percentages"""
+        if quantity >= 150:
+            return  0.15
+        elif quantity >= 100:
+            return 0.10
+        elif quantity >=50:
+            return 0.05
+        else:
+            return 0
 
     def generate_product_id(self, category: str, subcategory: str) -> str:
         """Generate a product identifier based on category and sub-category"""
         cat_abbr = category[:3].upper()
         sub_abbr = subcategory[:2].upper()
         return f"{cat_abbr}-{sub_abbr}-100{random.randint(10000, 99999)}"
-    
-    def update_data(self, kaggle_df: Optional[pd.DataFrame],
-                     start_date: date=date(2024,1,1), end_date: date=date(2025,1,1))-> pl.DataFrame:
-        """Update the date of the dataset downloaded from Kaggle"""
-
-        kaggle_df = pl.from_pandas(kaggle_df)
-        num_rows = kaggle_df.height
-        updated_rows = []
-
-        for i in range(num_rows):
-            order_date = self.generate_order_date(start_date = start_date, end_date = end_date)
-            ship_date = self.generate_ship_date(order_date=order_date)
-            order_id = self.generate_order_id(order_date=order_date)
-            product_data = self.generate_category_product()
-            category = product_data["Category"]
-            sub_category = product_data["Sub-Category"]
-            product_name = product_data["Product"]
-            product_id = self.generate_product_id(category, sub_category)
-
-            row =  {
-                "Order ID": order_id,
-                "Order Date": order_date,
-                "Ship Date": ship_date,
-                "Category": category,
-                "Sub-Category": sub_category,
-                "Product ID": product_id,
-                "Product Name": product_name,
-            }
-            updated_rows.append(row)
-
-        kaggle_df = pl.DataFrame(updated_rows)
-
-        logger.info("Successfully updated the date in %s rows in the kaggle dataset", num_rows)
-        return kaggle_df
     
     def generate_synthetic_data(
         self,
@@ -169,22 +158,28 @@ class SyntheticDataGenerator:
             order_date = self.generate_order_date(
                 start_date=start_date, end_date=end_date)
             ship_date = self.generate_ship_date(order_date=order_date)
-            order_id = self.generate_order_id(order_date)
+            order_id = self.generate_order_id(order_date=order_date)
+            ship_mode = self.generate_ship_mode(order_date=order_date, ship_date=ship_date)
             location = self.generate_location_data()
-            product_data = self.generate_category_product()
-            category = product_data["Category"]
-            sub_category = product_data["Sub-Category"]
-            product_name = product_data["Product"]
+            category, sub_category, product = self.generate_product_details()
+            product_price = product['price']
+            product_name = product['name']
             product_id = self.generate_product_id(category, sub_category)
-            sales = self.generate_sales_amount(min_amount=10, max_amount=2900)
+            discount = self.generate_discount(min_amount=10, max_amount=2900)
+            quantity = self.generate_discount(min_amount=1, max_amount=150)
 
             row = {
                 "Order ID": order_id,
                 "Order Date": order_date,
                 "Ship Date": ship_date,
-                "Ship Mode": random.choice(self.SHIP_MODES),
+                "Ship Mode": ship_mode,
                 "Customer ID": customer_id,
                 "Customer Name": customer_name,
+                "Industry": random.choice(self.INDUSTRIES),
+                "Business Type": random.choice(['Public', 'Private', 'Non-Profit',
+                                                 'Government Contractor']),
+                "Purchasing Frequency": random.choice([
+                'Monthly', 'Quarterly', 'Bi-Annually', 'Annually']),
                 "Segment": random.choice(self.SEGMENTS),
                 "Country": "United States",
                 "City": location["City"],
@@ -195,7 +190,9 @@ class SyntheticDataGenerator:
                 "Sub-Category": sub_category,
                 "Product ID": product_id,
                 "Product Name": product_name,
-                "Sales": sales,
+                "Sales": product_price,
+                "Discount": discount,
+                "Quantity": quantity
             }
             synthetic_rows.append(row)
 
