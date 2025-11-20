@@ -139,9 +139,9 @@ class SyntheticDataGenerator:
     
     def generate_synthetic_data(
         self,
-        num_rows: int = 100_000,
-        start_date: date = date(2024, 1, 1),
-        end_date: date = date(2025, 12, 31),
+        num_rows: int,
+        start_date: date,
+        end_date: date,
     ) -> pl.DataFrame:
         """Generate synthetic sales records"""
 

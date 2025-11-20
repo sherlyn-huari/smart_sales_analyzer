@@ -37,9 +37,10 @@ class DimensionalModelBuilder:
         CREATE TABLE analytics.dim_customer AS
         SELECT
             ROW_NUMBER() OVER (ORDER BY customer_id) AS customer_key,
-            customer_id,                                              
+            customer_id,
             customer_name,
             segment,
+            purchasing_frequency,
             CURRENT_TIMESTAMP AS created_at,
             CURRENT_TIMESTAMP AS updated_at
         FROM (
@@ -47,7 +48,8 @@ class DimensionalModelBuilder:
             SELECT DISTINCT
                 customer_id,
                 customer_name,
-                segment
+                segment,
+                purchasing_frequency
             FROM analytics.sales
             WHERE customer_id IS NOT NULL
         ) unique_customers
@@ -77,10 +79,11 @@ class DimensionalModelBuilder:
         CREATE TABLE analytics.dim_product AS
         SELECT
             ROW_NUMBER() OVER (ORDER BY product_id) AS product_key,
-            product_id,                                  
+            product_id,
             product_name,
             category,
             sub_category,
+            price AS base_price,
             CURRENT_TIMESTAMP AS created_at,
             CURRENT_TIMESTAMP AS updated_at
         FROM (
@@ -88,7 +91,8 @@ class DimensionalModelBuilder:
                 product_id,
                 product_name,
                 category,
-                sub_category
+                sub_category,
+                price
             FROM analytics.sales
             WHERE product_id IS NOT NULL
         ) unique_products
@@ -240,12 +244,13 @@ class DimensionalModelBuilder:
             s.ship_mode,
 
             -- Measures
-            s.sales AS sales_amount,
+            s.revenue AS sales_amount,
             s.quantity,
-            s.ship_latency_days,
-
-            -- Calculated measures
-            s.sales / NULLIF(s.quantity, 0) AS unit_price,
+            s.discount,
+            s.discount_amount,
+            s.gross_sales,
+            s.price AS unit_price,
+            DATE_DIFF('day', s.order_date, s.ship_date) AS ship_latency_days,
 
             -- Metadata
             CURRENT_TIMESTAMP AS created_at
@@ -388,15 +393,20 @@ class DimensionalModelBuilder:
     def close(self) -> None:
         self.conn.close()
         logger.info("Database connection closed")
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+        
+
 
 
 def main():
-    builder = DimensionalModelBuilder()
-    try:
+    with DimensionalModelBuilder() as builder:
         builder.build_all()
-    finally:
-        builder.close()
-
 
 if __name__ == "__main__":
     main()

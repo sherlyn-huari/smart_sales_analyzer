@@ -26,26 +26,38 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class SalesETL:
-    def __init__(self, input_dir: str | Path = "data/input" , output_dir: str | Path = "data/output",
-                 warehouse_dir: str | Path = "data/output/sales_analytics.duckdb") -> None:
+    def __init__(
+        self,
+        input_dir: str | Path = "data/input",
+        output_dir: str | Path = "data/output",
+        synthetic_data_dir: str | Path = "data/synthetic",
+    ) -> None:
         self.input_dir = Path(input_dir)
-        self.output_dir = Path(output_dir) 
-        self.warehouse_dir = Path(warehouse_dir)
+        self.output_dir = Path(output_dir)
+        self.synthetic_data_dir = Path(synthetic_data_dir)
+        self.warehouse_path = self.output_dir / "warehouse" / "sales_analytics.duckdb"
+
         self.input_dir.mkdir(parents=True, exist_ok=True)
-        self.output_dir.mkdir(parents=True, exist_ok= True)
-        self.synthetic_generator = SyntheticDataGenerator()
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.synthetic_data_dir.mkdir(parents=True, exist_ok=True)
+        self.warehouse_path.parent.mkdir(parents=True, exist_ok=True)
+
+        self.synthetic_generator = SyntheticDataGenerator(input_dir=self.input_dir)
         self.df: Optional[pd.DataFrame] = None
 
-    def build_dataset(self, num_synthetic_rows: int = 100_000,
-                      start_date = date(2023,1,1),
-                      end_date = date(2025,12,31),
-                      rebuild: bool = False) -> pd.DataFrame:
-        """Create a dataset of reatil sales of company B2B
+    def build_dataset(
+        self,
+        num_synthetic_rows: int,
+        start_date: date,
+        end_date: date,
+        rebuild: bool,
+    ) -> pd.DataFrame:
+        """Create a dataset of B2B retail sales for the company 
         Args:
             rebuild: If True, always generate new data. If False, load from file if exists.
         """
 
-        dataset_file = self.output_dir / "synthetic_sales.parquet"
+        dataset_file = self.output_dir / "synthetic_data.parquet"
 
         if not rebuild and dataset_file.exists():
             logger.info("Loading existing dataset from %s", dataset_file)
@@ -66,7 +78,30 @@ class SalesETL:
 
         self.df = synthetic_df
         return synthetic_df
-    
+
+    def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Clean and validate data before transformation
+        Handles nulls in critical columns to avoid issues during calculations
+        """
+        # Critical columns
+        numeric_cols = ["price", "quantity", "discount"]
+        for col in numeric_cols:
+            if col in df.columns:
+                null_count = df[col].isna().sum()
+                if null_count > 0:
+                    logger.warning("Found %s nulls in '%s', filling with 0", null_count, col)
+                    df[col] = df[col].fillna(0)
+
+
+        if "discount" in df.columns:
+            df["discount"] = df["discount"].clip(0, 1)
+
+        total_nulls = df.isna().sum().sum()
+        if total_nulls > 0:
+            logger.info("Remaining nulls in dataset: %s", total_nulls)
+
+        return df
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Get calculate metrics"""
 
@@ -79,9 +114,6 @@ class SalesETL:
             df["revenue"] = df["price"] * df["quantity"] * (1 - df["discount"])
             df["discount_amount"] = df["price"] * df["quantity"] * df["discount"]
             df["gross_sales"] = df["price"] * df["quantity"]
-        
-        if "ship_latency_days" in df.columns:
-            df["is_late_shipment"] = df["ship_latency_days"] > 3
 
         self.df = df
         logger.debug("df dataset with %s rows and %s columns", len(df), len(df.columns))
@@ -100,16 +132,6 @@ class SalesETL:
                     unique_customers=("customer_id", "nunique"),
                 )
                 .sort_values("order_year")
-            )
-
-        if {"order_year", "segment", "revenue"}.issubset(df.columns):
-            summaries["segment_yearly"] = (
-                df.groupby(["order_year", "segment"], as_index=False)
-                .agg(
-                    total_revenue=("revenue", lambda x: round(x.sum(), 2)),
-                    total_orders=("segment", "count"),
-                )
-                .sort_values(["order_year", "total_revenue"], ascending=[True, False])
             )
 
         if {"region", "revenue"}.issubset(df.columns):
@@ -204,10 +226,15 @@ class SalesETL:
         summaries: Dict[str, pd.DataFrame],
         quality_results: Dict[str, bool],
     ) -> None:
-        """Persist the dataset, summary tables, and quality report under the data/output directory"""
-        dataset_path = self.output_dir / "sales_enriched.parquet"
-        df.to_parquet(dataset_path, index=False)
-        logger.info("Saved enriched dataset to %s", dataset_path)
+        """ Put inside the data/output directory the following 
+         - First 50 rows of the synthetic dataset  
+         - Summary tables, and 
+         - Quality report """
+        
+        sample_df = df.head(50)
+        sample_path = self.output_dir / "sample_data.csv"
+        sample_df.to_csv(sample_path, index=False)
+        logger.info("Saved sample of the dataset to %s", sample_df)
 
         for name, table in summaries.items():
             output_path = self.output_dir / f"{name}.csv"
@@ -220,48 +247,55 @@ class SalesETL:
 
     def load_into_warehouse(
         self,
-        summaries: Dict[str, pd.DataFrame],
+        transformed_df: pd.DataFrame,
         build_star_schema: bool = True,
     ) -> None:
-        """Load summary tables and dimensional model into DuckDB"""
+        """Load transformed data and dimensional model into DuckDB"""
+        with duckdb.connect(str(self.warehouse_path)) as conn:
+            conn.execute("CREATE SCHEMA IF NOT EXISTS analytics")
 
-        # Load summary tables
-        with duckdb.connect(str(self.warehouse_dir)) as conn:
-            for name, table in summaries.items():
-                view_name = f"{name}_summary"
-                logger.info("Loading %s into warehouse", view_name)
-                arrow_summary = pa.Table.from_pandas(table)
-                conn.register(view_name, arrow_summary)
-                conn.execute(
-                    f"CREATE OR REPLACE TABLE analytics.{view_name} AS SELECT * FROM {view_name}"
-                )
-                conn.unregister(view_name)
+            logger.info("Loading transformed data into warehouse (%d rows)", len(transformed_df))
+            arrow_table = pa.Table.from_pandas(transformed_df)
+            conn.register("sales_data", arrow_table)
+            conn.execute(
+                "CREATE OR REPLACE TABLE analytics.sales AS SELECT * FROM sales_data"
+            )
+            conn.unregister("sales_data")
 
-        logger.info("Loaded %s summary tables into %s", len(summaries), self.warehouse_dir)
+        logger.info("Loaded analytics.sales into %s", self.warehouse_path)
 
         # Build dimensional model
         if build_star_schema:
             logger.info("Building dimensional model (star schema)")
             try:
-                dim_builder = DimensionalModelBuilder(warehouse_path=self.warehouse_dir)
-                dim_builder.build_all()
-                dim_builder.close()
+                with DimensionalModelBuilder(warehouse_path=self.warehouse_path) as builder:
+                    builder.build_all()
                 logger.info("Dimensional model built successfully")
             except Exception as exc:
                 logger.error("Failed to build dimensional model: %s", exc)
                 logger.warning("Continuing without dimensional model")
 
-    def run(self, num_synthetic_rows: int = 10_000, build_star_schema: bool = True,
-        **kwargs,
+    def run(
+        self,
+        num_synthetic_rows: int = 10_000,
+        start_date: date = date(2023, 1, 1),
+        end_date: date = date(2025, 12, 31),
+        rebuild: bool = False,
+        build_star_schema: bool = True,
     ) -> pd.DataFrame:
         """Execute the pipeline"""
-
-        combined_df = self.build_dataset(num_synthetic_rows=num_synthetic_rows,rebuild = True)
-        transformed_df = self.transform(combined_df)
+        combined_df = self.build_dataset(
+            num_synthetic_rows=num_synthetic_rows,
+            start_date=start_date,
+            end_date=end_date,
+            rebuild=rebuild,
+        )
+        cleaned_df = self.clean_data(combined_df)
+        transformed_df = self.transform(cleaned_df)
         summaries = self.build_summaries(transformed_df)
         quality_results = self.run_quality_checks(transformed_df)
         self.persist_outputs(transformed_df, summaries, quality_results)
-        #self.load_into_warehouse(summaries, build_star_schema=build_star_schema)
+        self.load_into_warehouse(transformed_df, build_star_schema=build_star_schema)
 
         return transformed_df
 
