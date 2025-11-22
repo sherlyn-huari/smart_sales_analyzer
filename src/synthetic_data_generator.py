@@ -9,7 +9,6 @@ from faker import Faker
 
 logger = logging.getLogger(__name__)
 
-
 class SyntheticDataGenerator:
     """Generate synthetic sales data"""
 
@@ -48,10 +47,38 @@ class SyntheticDataGenerator:
         self.input_dir = Path(input_dir)
         self.input_dir.mkdir(parents=True, exist_ok=True)
         self.fake = Faker(locale)
+        self._product_catalog = None
         Faker.seed(seed)
         random.seed(seed)
         np.random.seed(seed)
+
+        # Pre-generate master data pools
+        self.customers = {}  # customer_id -> {name, segment, purchasing_frequency}
+        self._product_catalog = None
+
         logger.info("Initialized SyntheticDataGenerator with seed=%s", seed)
+
+    def _initialize_customer_pool(self, num_customers: int) -> None:
+        """Pre-generate a pool of unique customers with consistent attributes"""
+        if self.customers:
+            return
+
+        logger.info("Generating pool of %d unique customers", num_customers)
+        used_ids = set()
+
+        while len(self.customers) < num_customers:
+            name = self.generate_customer_name()
+            customer_id = self.generate_customer_id(name)
+
+            if customer_id in used_ids:
+                continue
+
+            used_ids.add(customer_id)
+            self.customers[customer_id] = {
+                'name': name,
+                'segment': random.choice(self.SEGMENTS),
+                'purchasing_frequency': random.choice(['Monthly', 'Quarterly', 'Bi-Annually'])
+            }
 
     def generate_customer_name(self) -> str:
         """Generate a customer name"""
@@ -99,12 +126,16 @@ class SyntheticDataGenerator:
 
     def generate_product_details(self) -> dict[str, str]:
         """Generate category and sub_category"""
+
         catalog_path = self.input_dir / "product_catalog.json"
+        if self._product_catalog is None:
+            return 
         with catalog_path.open("r") as f:
-            product_catalog = json.load(f)
-        category = random.choice(list(product_catalog.keys()))
-        sub_category = random.choice(list(product_catalog[category].keys()))
-        product = random.choice(list(product_catalog[category][sub_category]))
+            self._product_catalog  = json.load(f)
+        category = random.choice(list(self._product_catalog.keys()))
+        sub_category = random.choice(list(self._product_catalog[category].keys()))
+        product = random.choice(list(self._product_catalog[category][sub_category]))
+
         return category, sub_category, product
 
     def generate_order_id(self, order_date: datetime) -> str:
@@ -130,39 +161,45 @@ class SyntheticDataGenerator:
             return 0.05
         else:
             return 0
-
-    def generate_product_id(self, category: str, subcategory: str) -> str:
-        """Generate a product identifier based on category and sub-category"""
-        cat_abbr = category[:3].upper()
-        sub_abbr = subcategory[:2].upper()
-        return f"{cat_abbr}-{sub_abbr}-100{random.randint(10000, 99999)}"
-    
+        
     def generate_synthetic_data(
         self,
         num_rows: int,
         start_date: date,
         end_date: date,
+        num_customers: int = None,
     ) -> pl.DataFrame:
         """Generate synthetic sales records"""
 
         logger.info("Generating %s synthetic rows...", num_rows)
 
+        # Initialize master data pools
+        if num_customers is None:
+            # Default: ~1 customer per row on average, but cap at reasonable number
+            num_customers = min(num_rows, 100000)
+
+        self._initialize_customer_pool(num_customers)
+
+        # Get lists for random selection
+        customer_ids = list(self.customers.keys())
+
         synthetic_rows = []
 
         for row_id in range(1, num_rows + 1):
-            customer_name = self.generate_customer_name()
-            customer_id = self.generate_customer_id(customer_name)
+            # Select from pre-generated customer pool
+            customer_id = random.choice(customer_ids)
+            customer_data = self.customers[customer_id]
+
+
+            category, sub_category, product = self.generate_product_details()
             order_date = self.generate_order_date(
                 start_date=start_date, end_date=end_date)
             ship_date = self.generate_ship_date(order_date=order_date)
             order_id = self.generate_order_id(order_date=order_date)
-            ship_mode = self.generate_ship_mode(order_date=order_date, ship_date=ship_date)
+            ship_mode = self.generate_ship_mode(order_date=order_date, 
+                                                ship_date=ship_date)
             location = self.generate_location_data()
-            category, sub_category, product = self.generate_product_details()
-            product_price = product['price']
-            product_name = product['name']
-            product_id = self.generate_product_id(category, sub_category)
-            quantity = self.generate_quantity(category= category)
+            quantity = self.generate_quantity(category=category)
             discount = self.generate_discount(quantity=quantity)
 
             row = {
@@ -172,20 +209,18 @@ class SyntheticDataGenerator:
                 "ship_date": ship_date,
                 "ship_mode": ship_mode,
                 "customer_id": customer_id,
-                "customer_name": customer_name,
-                "purchasing_frequency": random.choice([
-                'Monthly', 'Quarterly', 'Bi-Annually']),
-                "segment": random.choice(self.SEGMENTS),
-                "country": "United States",
+                "customer_name": customer_data['name'],
+                "purchasing_frequency": customer_data['purchasing_frequency'],
+                "segment": customer_data['segment'],
                 "city": location["City"],
                 "state": location["State"],
                 "postal_code": location["Postal Code"],
                 "region": location["Region"],
                 "category": category,
                 "sub_category": sub_category,
-                "product_id": product_id,
-                "product_name": product_name,
-                "price": product_price,
+                "product_id": product['product_id'],
+                "product_name": product['name'],
+                "price": product['price'],
                 "quantity": quantity,
                 "discount": discount
             }

@@ -29,22 +29,25 @@ class DimensionalModelBuilder:
         """
         Create customer dimension table
         """
-        logger.info("Creating dim_customer")
-
         sql = """
         DROP TABLE IF EXISTS analytics.dim_customer;
 
-        CREATE TABLE analytics.dim_customer AS
+        CREATE TABLE analytics.dim_customer (
+            customer_key INTEGER PRIMARY KEY,
+            customer_id VARCHAR,
+            customer_name VARCHAR,
+            segment VARCHAR,
+            purchasing_frequency VARCHAR
+        );
+
+        INSERT INTO analytics.dim_customer
         SELECT
             ROW_NUMBER() OVER (ORDER BY customer_id) AS customer_key,
             customer_id,
             customer_name,
             segment,
-            purchasing_frequency,
-            CURRENT_TIMESTAMP AS created_at,
-            CURRENT_TIMESTAMP AS updated_at
+            purchasing_frequency
         FROM (
-
             SELECT DISTINCT
                 customer_id,
                 customer_name,
@@ -52,11 +55,7 @@ class DimensionalModelBuilder:
                 purchasing_frequency
             FROM analytics.sales
             WHERE customer_id IS NOT NULL
-        ) unique_customers
-        ORDER BY customer_key;
-
-        ALTER TABLE analytics.dim_customer
-        ADD CONSTRAINT pk_dim_customer PRIMARY KEY (customer_key);
+        ) unique_customers;
 
         CREATE INDEX idx_dim_customer_id ON analytics.dim_customer(customer_id);
         """
@@ -67,25 +66,29 @@ class DimensionalModelBuilder:
 
     def create_dim_product(self) -> None:
         """
-        Create product dimension table: 
-        This table stores unique products by Category → Sub-Category → Product
+        Create product dimension table (Category - Subcategory - Product Name)
         """
-        logger.info("Creating dim_product")
 
         sql = """
-
         DROP TABLE IF EXISTS analytics.dim_product;
 
-        CREATE TABLE analytics.dim_product AS
+        CREATE TABLE analytics.dim_product (
+            product_key INTEGER PRIMARY KEY,
+            product_id VARCHAR,
+            product_name VARCHAR,
+            category VARCHAR,
+            sub_category VARCHAR,
+            base_price DOUBLE
+        );
+
+        INSERT INTO analytics.dim_product
         SELECT
             ROW_NUMBER() OVER (ORDER BY product_id) AS product_key,
             product_id,
             product_name,
             category,
             sub_category,
-            price AS base_price,
-            CURRENT_TIMESTAMP AS created_at,
-            CURRENT_TIMESTAMP AS updated_at
+            price AS base_price
         FROM (
             SELECT DISTINCT
                 product_id,
@@ -95,11 +98,7 @@ class DimensionalModelBuilder:
                 price
             FROM analytics.sales
             WHERE product_id IS NOT NULL
-        ) unique_products
-        ORDER BY product_key;
-
-        ALTER TABLE analytics.dim_product
-        ADD CONSTRAINT pk_dim_product PRIMARY KEY (product_key);
+        ) unique_products;
 
         CREATE INDEX idx_dim_product_id ON analytics.dim_product(product_id);
         """
@@ -113,36 +112,33 @@ class DimensionalModelBuilder:
         """
         Create location dimension table: This table stores unique geographic locations
         """
-        logger.info("Creating dim_location")
-
         sql = """
-
         DROP TABLE IF EXISTS analytics.dim_location;
 
-        CREATE TABLE analytics.dim_location AS
+        CREATE TABLE analytics.dim_location (
+            location_key INTEGER PRIMARY KEY,
+            city VARCHAR,
+            state VARCHAR,
+            postal_code VARCHAR,
+            region VARCHAR
+        );
+
+        INSERT INTO analytics.dim_location
         SELECT
-            ROW_NUMBER() OVER (ORDER BY country, region, state, city, postal_code) AS location_key,
+            ROW_NUMBER() OVER (ORDER BY region, state, city, postal_code) AS location_key,
             city,
             state,
             postal_code,
-            region,
-            country,
-            CURRENT_TIMESTAMP AS created_at
+            region
         FROM (
             SELECT DISTINCT
                 city,
                 state,
                 postal_code,
-                region,
-                country
+                region
             FROM analytics.sales
             WHERE city IS NOT NULL
-        ) unique_locations
-        ORDER BY location_key;
-
-        ALTER TABLE analytics.dim_location
-        ADD CONSTRAINT pk_dim_location PRIMARY KEY (location_key);
-
+        ) unique_locations;
 
         CREATE INDEX idx_dim_location_region ON analytics.dim_location(region);
         CREATE INDEX idx_dim_location_state ON analytics.dim_location(state);
@@ -158,22 +154,26 @@ class DimensionalModelBuilder:
         """
         Create date dimension table generates  all dates 
         """
-        logger.info("Creating dim_date")
 
         sql = """
-
         DROP TABLE IF EXISTS analytics.dim_date;
 
-        CREATE TABLE analytics.dim_date AS
+        CREATE TABLE analytics.dim_date (
+            date_key INTEGER PRIMARY KEY,
+            date DATE,
+            year INTEGER,
+            month INTEGER,
+            month_name VARCHAR
+        );
+
+        INSERT INTO analytics.dim_date
         WITH date_range AS (
-            -- Get min and max dates from sales data
             SELECT
                 MIN(DATE_TRUNC('day', order_date)) AS min_date,
                 MAX(DATE_TRUNC('day', order_date)) AS max_date
             FROM analytics.sales
         ),
         all_dates AS (
-
             SELECT
                 UNNEST(
                     GENERATE_SERIES(
@@ -186,27 +186,14 @@ class DimensionalModelBuilder:
         SELECT
             -- Surrogate key -> 20170101
             CAST(STRFTIME(date_value, '%Y%m%d') AS INTEGER) AS date_key,
-
             CAST(date_value AS DATE) AS date,
-
-            -- Year attributes
+            -- Year
             EXTRACT(YEAR FROM date_value) AS year,
-
-            -- Month attributes
+            -- Month
             EXTRACT(MONTH FROM date_value) AS month,
-            STRFTIME(date_value, '%B') AS month_name,
-
-            -- Week attributes
-            EXTRACT(WEEK FROM date_value) AS week_of_year,
-
-            -- Metadata
-            CURRENT_TIMESTAMP AS created_at
-
+            STRFTIME(date_value, '%B') AS month_name
         FROM all_dates
         ORDER BY date_key;
-
-        ALTER TABLE analytics.dim_date
-        ADD CONSTRAINT pk_dim_date PRIMARY KEY (date_key);
 
         CREATE INDEX idx_dim_date_date ON analytics.dim_date(date);
         """
@@ -220,29 +207,38 @@ class DimensionalModelBuilder:
         """
         Create fact table for sales 
         """
-        logger.info("Creating fact_sales")
-
         sql = """
-
         DROP TABLE IF EXISTS analytics.fact_sales;
 
-        CREATE TABLE analytics.fact_sales AS
+        CREATE TABLE analytics.fact_sales (
+            sales_key INTEGER PRIMARY KEY,
+            order_id VARCHAR,
+            customer_key INTEGER,
+            product_key INTEGER,
+            location_key INTEGER,
+            order_date_key INTEGER,
+            ship_date_key INTEGER,
+            ship_mode VARCHAR,
+            sales_amount DOUBLE,
+            quantity INTEGER,
+            discount DOUBLE,
+            discount_amount DOUBLE,
+            gross_sales DOUBLE,
+            unit_price DOUBLE,
+            ship_latency_days INTEGER
+        );
+
+        INSERT INTO analytics.fact_sales
         SELECT
-            -- Surrogate key for this fact
             s.row_id AS sales_key,
-
-            -- Business keys
             s.order_id,
-
             -- Foreign keys to dimension tables
             dc.customer_key,
             dp.product_key,
             dl.location_key,
             CAST(STRFTIME(s.order_date, '%Y%m%d') AS INTEGER) AS order_date_key,
             CAST(STRFTIME(s.ship_date, '%Y%m%d') AS INTEGER) AS ship_date_key,
-
             s.ship_mode,
-
             -- Measures
             s.revenue AS sales_amount,
             s.quantity,
@@ -250,51 +246,17 @@ class DimensionalModelBuilder:
             s.discount_amount,
             s.gross_sales,
             s.price AS unit_price,
-            DATE_DIFF('day', s.order_date, s.ship_date) AS ship_latency_days,
-
-            -- Metadata
-            CURRENT_TIMESTAMP AS created_at
-
+            DATE_DIFF('day', s.order_date, s.ship_date) AS ship_latency_days
         FROM analytics.sales s
-
-        -- Join to get customer dimension key
         LEFT JOIN analytics.dim_customer dc
             ON s.customer_id = dc.customer_id
-
-        -- Join to get product dimension key
         LEFT JOIN analytics.dim_product dp
             ON s.product_id = dp.product_id
-
-        -- Join to get location dimension key
         LEFT JOIN analytics.dim_location dl
             ON s.city = dl.city
             AND s.state = dl.state
             AND s.postal_code = dl.postal_code
-
         ORDER BY s.row_id;
-
-        ALTER TABLE analytics.fact_sales
-        ADD CONSTRAINT pk_fact_sales PRIMARY KEY (sales_key);
-
-        ALTER TABLE analytics.fact_sales
-        ADD CONSTRAINT fk_fact_customer
-        FOREIGN KEY (customer_key) REFERENCES analytics.dim_customer(customer_key);
-
-        ALTER TABLE analytics.fact_sales
-        ADD CONSTRAINT fk_fact_product
-        FOREIGN KEY (product_key) REFERENCES analytics.dim_product(product_key);
-
-        ALTER TABLE analytics.fact_sales
-        ADD CONSTRAINT fk_fact_location
-        FOREIGN KEY (location_key) REFERENCES analytics.dim_location(location_key);
-
-        ALTER TABLE analytics.fact_sales
-        ADD CONSTRAINT fk_fact_order_date
-        FOREIGN KEY (order_date_key) REFERENCES analytics.dim_date(date_key);
-
-        ALTER TABLE analytics.fact_sales
-        ADD CONSTRAINT fk_fact_ship_date
-        FOREIGN KEY (ship_date_key) REFERENCES analytics.dim_date(date_key);
 
         CREATE INDEX idx_fact_customer ON analytics.fact_sales(customer_key);
         CREATE INDEX idx_fact_product ON analytics.fact_sales(product_key);
@@ -314,7 +276,6 @@ class DimensionalModelBuilder:
 
         logger.info("VALIDATING DIMENSIONAL MODEL")
 
-        # Check if table exists
         tables = self.conn.execute("""
             SELECT table_name, estimated_size
             FROM duckdb_tables()
@@ -325,7 +286,6 @@ class DimensionalModelBuilder:
         print("\n Tables Created:")
         print(tables.to_string(index=False))
 
-        # Check row counts
         counts = self.conn.execute("""
             SELECT
                 (SELECT COUNT(*) FROM analytics.fact_sales) as fact_sales,
@@ -339,7 +299,7 @@ class DimensionalModelBuilder:
         print("\n Row Counts:")
         print(counts.T.to_string())
 
-        # Validate no orphans in fact table
+        # Validate key in each fact table
         orphan_check = self.conn.execute("""
             SELECT
                 COUNT(*) as total_rows,
@@ -350,10 +310,10 @@ class DimensionalModelBuilder:
             FROM analytics.fact_sales
         """).df()
 
-        print("\n✓ Foreign Key Coverage:")
+        print("\n Foreign Key Coverage:")
         print(orphan_check.to_string(index=False))
 
-        # analytical query
+        # check  query
         print("\n Sample Analytical Query - Sales by Region and Category:")
         result = self.conn.execute("""
             SELECT
@@ -401,9 +361,6 @@ class DimensionalModelBuilder:
         self.close()
         return False
         
-
-
-
 def main():
     with DimensionalModelBuilder() as builder:
         builder.build_all()

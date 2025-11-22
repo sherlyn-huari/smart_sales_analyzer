@@ -33,9 +33,8 @@ def load_summary(path: Path) -> pl.DataFrame | None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Smart Sales Analyzer", layout="wide")
-    st.title("📊 Smart Sales Analyzer Dashboard")
-    st.caption("Kaggle dataset augmented with 100000 locally generated synthetic rows.")
+    st.set_page_config(page_title="Sales Analyzer", layout="wide")
+    st.title("📊 B2B Retail sales Dashboard")
 
     try:
         dataset = load_dataset()
@@ -114,9 +113,9 @@ def main() -> None:
         else:
             st.info("Regional summary unavailable.")
 
-    st.subheader("Top 15 Products")
+    st.subheader("Top 5 Products")
     if top_products is not None and len(top_products) > 0:
-        st.dataframe(top_products.sort("revenue", descending=True).head(15).to_pandas())
+        st.dataframe(top_products.sort("revenue", descending=True).head(5).to_pandas())
     else:
         st.info("Product-level summary unavailable.")
 

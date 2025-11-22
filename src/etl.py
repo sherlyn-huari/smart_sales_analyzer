@@ -111,9 +111,9 @@ class SalesETL:
             df["order_month"] = df["order_date"].dt.month
 
         if "price" in df.columns and "quantity" in df.columns and "discount" in df.columns:
-            df["revenue"] = df["price"] * df["quantity"] * (1 - df["discount"])
-            df["discount_amount"] = df["price"] * df["quantity"] * df["discount"]
-            df["gross_sales"] = df["price"] * df["quantity"]
+            df["revenue"] = (df["price"] * df["quantity"] * (1 - df["discount"])).round(2)
+            df["discount_amount"] = (df["price"] * df["quantity"] * df["discount"]).round(2)
+            df["gross_sales"] = (df["price"] * df["quantity"]).round(2)
 
         self.df = df
         logger.debug("df dataset with %s rows and %s columns", len(df), len(df.columns))
@@ -228,13 +228,13 @@ class SalesETL:
     ) -> None:
         """ Put inside the data/output directory the following 
          - First 50 rows of the synthetic dataset  
-         - Summary tables, and 
+         - Summary tables
          - Quality report """
         
         sample_df = df.head(50)
         sample_path = self.output_dir / "sample_data.csv"
         sample_df.to_csv(sample_path, index=False)
-        logger.info("Saved sample of the dataset to %s", sample_df)
+        logger.info("Saved sample of the dataset to %s", sample_path)
 
         for name, table in summaries.items():
             output_path = self.output_dir / f"{name}.csv"
@@ -277,10 +277,10 @@ class SalesETL:
 
     def run(
         self,
-        num_synthetic_rows: int = 10_000,
+        num_synthetic_rows: int = 100_000,
         start_date: date = date(2023, 1, 1),
-        end_date: date = date(2025, 12, 31),
-        rebuild: bool = False,
+        end_date: date = date(2024, 12, 31),
+        rebuild: bool = True,
         build_star_schema: bool = True,
     ) -> pd.DataFrame:
         """Execute the pipeline"""
