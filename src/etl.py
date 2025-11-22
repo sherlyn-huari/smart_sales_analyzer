@@ -32,6 +32,7 @@ class SalesETL:
         output_dir: str | Path = "data/output",
         synthetic_data_dir: str | Path = "data/synthetic",
     ) -> None:
+        
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.synthetic_data_dir = Path(synthetic_data_dir)
@@ -83,7 +84,6 @@ class SalesETL:
         """Clean and validate data before transformation
         Handles nulls in critical columns to avoid issues during calculations
         """
-        # Critical columns
         numeric_cols = ["price", "quantity", "discount"]
         for col in numeric_cols:
             if col in df.columns:

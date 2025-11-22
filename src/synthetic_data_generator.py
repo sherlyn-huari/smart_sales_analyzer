@@ -3,8 +3,7 @@ import json
 import random
 from pathlib import Path
 from datetime import date, datetime, timedelta
-import numpy as np
-import polars as pl
+import pandas as pd
 from faker import Faker
 
 logger = logging.getLogger(__name__)
@@ -47,39 +46,13 @@ class SyntheticDataGenerator:
         self.input_dir = Path(input_dir)
         self.input_dir.mkdir(parents=True, exist_ok=True)
         self.fake = Faker(locale)
-        self._product_catalog = None
         Faker.seed(seed)
         random.seed(seed)
-        np.random.seed(seed)
-
-        # Pre-generate master data pools
-        self.customers = {}  # customer_id -> {name, segment, purchasing_frequency}
+        self.customers = {}
         self._product_catalog = None
 
         logger.info("Initialized SyntheticDataGenerator with seed=%s", seed)
-
-    def _initialize_customer_pool(self, num_customers: int) -> None:
-        """Pre-generate a pool of unique customers with consistent attributes"""
-        if self.customers:
-            return
-
-        logger.info("Generating pool of %d unique customers", num_customers)
-        used_ids = set()
-
-        while len(self.customers) < num_customers:
-            name = self.generate_customer_name()
-            customer_id = self.generate_customer_id(name)
-
-            if customer_id in used_ids:
-                continue
-
-            used_ids.add(customer_id)
-            self.customers[customer_id] = {
-                'name': name,
-                'segment': random.choice(self.SEGMENTS),
-                'purchasing_frequency': random.choice(['Monthly', 'Quarterly', 'Bi-Annually'])
-            }
-
+    
     def generate_customer_name(self) -> str:
         """Generate a customer name"""
         return self.fake.name()
@@ -93,6 +66,32 @@ class SyntheticDataGenerator:
             initials = parts[0][0] + parts[1][0]
         number = random.randint(10000, 99999)
         return f"{initials.upper()}-{number}"
+    
+    def build_customer_pool(self, num_customers: int) -> None:
+        """Generate a pool of unique customers with consistent attributes"""
+        if len(self.customers) == num_customers:
+            return 
+        elif len(self.customers) < num_customers:
+            used_ids = set()
+            while len(self.customers) < num_customers:
+                name = self.generate_customer_name()
+                customer_id = self.generate_customer_id(name)
+
+                if customer_id in used_ids:
+                    continue
+
+                used_ids.add(customer_id)
+                self.customers[customer_id] = {
+                    'name': name,
+                    'segment': random.choice(self.SEGMENTS),
+                    'purchasing_frequency': random.choice(['Monthly', 'Quarterly', 'Bi-Annually'])
+                }
+        else:
+            excess_count = len(self.customers) - num_customers
+            for _ in range(excess_count):
+                self.customers.popitem()
+
+        logger.info("Generated pool of %d unique customers", num_customers)
 
     def generate_order_date( self, start_date: date, end_date: date ) -> date:
         """Generate order date"""
@@ -126,12 +125,12 @@ class SyntheticDataGenerator:
 
     def generate_product_details(self) -> dict[str, str]:
         """Generate category and sub_category"""
-
-        catalog_path = self.input_dir / "product_catalog.json"
+        # Load catalog only once and cache it
         if self._product_catalog is None:
-            return 
-        with catalog_path.open("r") as f:
-            self._product_catalog  = json.load(f)
+            catalog_path = self.input_dir / "product_catalog.json"
+            with catalog_path.open("r") as f:
+                self._product_catalog = json.load(f)
+
         category = random.choice(list(self._product_catalog.keys()))
         sub_category = random.choice(list(self._product_catalog[category].keys()))
         product = random.choice(list(self._product_catalog[category][sub_category]))
@@ -167,37 +166,29 @@ class SyntheticDataGenerator:
         num_rows: int,
         start_date: date,
         end_date: date,
-        num_customers: int = None,
-    ) -> pl.DataFrame:
+        num_customers: int = 100,
+    ) -> pd.DataFrame:
         """Generate synthetic sales records"""
 
         logger.info("Generating %s synthetic rows...", num_rows)
 
-        # Initialize master data pools
-        if num_customers is None:
-            # Default: ~1 customer per row on average, but cap at reasonable number
-            num_customers = min(num_rows, 100000)
-
-        self._initialize_customer_pool(num_customers)
-
-        # Get lists for random selection
+        self.build_customer_pool(num_customers)
         customer_ids = list(self.customers.keys())
 
         synthetic_rows = []
 
         for row_id in range(1, num_rows + 1):
-            # Select from pre-generated customer pool
-            customer_id = random.choice(customer_ids)
+            # Cycle through customers in order
+            customer_index = (row_id - 1) % len(customer_ids)
+            customer_id = customer_ids[customer_index]
             customer_data = self.customers[customer_id]
 
 
             category, sub_category, product = self.generate_product_details()
-            order_date = self.generate_order_date(
-                start_date=start_date, end_date=end_date)
+            order_date = self.generate_order_date(start_date=start_date, end_date=end_date)
             ship_date = self.generate_ship_date(order_date=order_date)
             order_id = self.generate_order_id(order_date=order_date)
-            ship_mode = self.generate_ship_mode(order_date=order_date, 
-                                                ship_date=ship_date)
+            ship_mode = self.generate_ship_mode(order_date=order_date, ship_date=ship_date)
             location = self.generate_location_data()
             quantity = self.generate_quantity(category=category)
             discount = self.generate_discount(quantity=quantity)
@@ -226,6 +217,6 @@ class SyntheticDataGenerator:
             }
             synthetic_rows.append(row)
 
-        synthetic_df = pl.DataFrame(synthetic_rows)
+        synthetic_df = pd.DataFrame(synthetic_rows)
         logger.info("Successfully generated %s synthetic rows", len(synthetic_df))
         return synthetic_df
