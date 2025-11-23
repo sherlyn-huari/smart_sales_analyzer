@@ -54,10 +54,9 @@ def main() -> None:
     col3.metric("Unique Customers", f"{unique_customers:,}")
     col4.metric("Unique Products", f"{unique_products:,}")
 
-    # Filters
+
     st.sidebar.header("Filters")
 
-    # Year filter
     all_years = sorted(dataset["order_year"].unique().to_list())
     selected_years = st.sidebar.multiselect(
         "Select Years",
@@ -65,7 +64,7 @@ def main() -> None:
         default=all_years
     )
 
-    # Month filter
+
     all_months = list(range(1, 13))
     month_names = {
         1: "January", 2: "February", 3: "March", 4: "April",
@@ -85,7 +84,6 @@ def main() -> None:
         (pl.col("order_month").is_in(selected_months))
     )
 
-    # Update metrics with filtered data
     if len(filtered_dataset) > 0:
         st.sidebar.metric("Filtered Rows", f"{len(filtered_dataset):,}")
         st.sidebar.metric("Filtered Revenue", f"${filtered_dataset['revenue'].sum():,.0f}")
@@ -93,13 +91,11 @@ def main() -> None:
     with st.container():
         st.subheader("Revenue by Month")
         if filtered_dataset is not None and len(filtered_dataset) > 0:
-            # Group by year and month
             monthly_revenue = (
                 filtered_dataset.group_by(["order_year", "order_month"])
                 .agg(pl.col("revenue").sum().alias("total_revenue"))
                 .sort(["order_year", "order_month"])
             )
-            # Create a date column for better display
             monthly_revenue = monthly_revenue.with_columns(
                 (pl.col("order_year").cast(str) + "-" + pl.col("order_month").cast(str).str.zfill(2)).alias("year_month")
             )
@@ -162,13 +158,13 @@ def main() -> None:
                 .agg(pl.col("quantity").sum().alias("total_quantity"))
                 .sort(["order_year", "ship_mode"])
             )
-            # Create pivot table
+
             shipmode_pivot = shipmode_yearly.to_pandas().pivot(
                 index='ship_mode',
                 columns='order_year',
                 values='total_quantity'
             ).fillna(0)
-            # Format values
+
             st.dataframe(
                 shipmode_pivot.style.format("{:,.0f}"),
                 use_container_width=True
@@ -178,12 +174,12 @@ def main() -> None:
 
     st.subheader("Revenue by Segment and Year")
     if filtered_dataset is not None and len(filtered_dataset) > 0:
-        # Calculate from dataset directly
+
         segment_data = (
             filtered_dataset.group_by(["segment", "order_year"])
             .agg(pl.col("revenue").sum().alias("total_revenue"))
         )
-        # Create pivot table
+
         segment_pivot = segment_data.to_pandas().pivot(
             index='segment',
             columns='order_year',
@@ -196,7 +192,7 @@ def main() -> None:
     else:
         st.info("Segment-level data unavailable.")
 
-    # New row with two columns
+
     col_left, col_right = st.columns(2)
 
     with col_left:
@@ -226,7 +222,7 @@ def main() -> None:
                 .agg(pl.col("quantity").sum().alias("total_quantity"))
                 .sort(["order_year", "order_month"])
             )
-            # Create year-month column
+
             segment_quantity = segment_quantity.with_columns(
                 (pl.col("order_year").cast(str) + "-" + pl.col("order_month").cast(str).str.zfill(2)).alias("year_month")
             )
@@ -255,7 +251,7 @@ def main() -> None:
 
     st.subheader("Top 5 Products")
     if filtered_dataset is not None and len(filtered_dataset) > 0:
-        # Calculate top products with quantity
+
         top5_products = (
             filtered_dataset.group_by(["category", "product_name"])
             .agg([
@@ -266,10 +262,10 @@ def main() -> None:
             .head(5)
             .to_pandas()
         )
-        # Format the revenue column
+
         top5_products['total_revenue'] = top5_products['total_revenue'].apply(lambda x: f"${x:,.0f}")
         top5_products['total_quantity'] = top5_products['total_quantity'].apply(lambda x: f"{x:,.0f}")
-        # Rename columns for display
+
         top5_products = top5_products.rename(columns={
             'category': 'Category',
             'product_name': 'Product',
